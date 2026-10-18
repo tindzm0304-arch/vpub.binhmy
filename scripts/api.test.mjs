@@ -18,6 +18,7 @@ export async function resolve(specifier, context, next) {
 
 process.env.AUTH_SECRET = 'x'.repeat(40);
 process.env.ADMIN_PASSWORD = 'mat-khau-goc-123';
+process.env.ACCESS_CODE = 'ma-truy-cap-12';
 process.env.CRON_SECRET = 'cron-secret';
 
 const { default: auth } = await import('../api/auth.js');
@@ -48,7 +49,6 @@ assert.equal(r.status, 200);
 const admin = r.body.token;
 assert.equal(r.body.user.role, 'admin');
 assert.equal((await call(auth, { token: admin })).body.user.username, 'admin');
-assert.equal((await call(data, { token: 'gia.mao' })).status, 401);
 assert.equal(readToken(signToken('a', 'k', 0), 'k', 15 * 86400000), null, 'token hết hạn sau 14 ngày');
 
 /* ---------- Tài khoản ---------- */
@@ -59,13 +59,12 @@ assert.equal(r.status, 400, 'staff phải có phòng');
 r = await call(users, { method: 'POST', token: admin, body: { username: 'cb.kt', name: 'Cán bộ KT', role: 'staff', deptId: 'KT', password: '12345678' } });
 assert.equal(r.status, 200);
 assert.ok(r.body.users.every((u) => !('hash' in u) && !('salt' in u)), 'không trả hash về trình duyệt');
-await call(users, { method: 'POST', token: admin, body: { username: 'xem', role: 'viewer', password: '12345678' } });
 
 const staff = (await call(auth, { method: 'POST', body: { username: 'cb.kt', password: '12345678' } })).body.token;
-const viewer = (await call(auth, { method: 'POST', body: { username: 'xem', password: '12345678' } })).body.token;
 assert.equal((await call(users, { token: staff })).status, 403, 'staff không quản lý tài khoản');
 
-/* ---------- Dữ liệu theo quyền ---------- */
+/* ---------- Dữ liệu (mã truy cập chung, client gửi X-Access-Code) ---------- */
+const code = { headers: { 'x-access-code': 'MA TRUY CAP 12' } };
 const task = (id, dept, title = id) => ({ id, title, departmentId: dept, collabDeptIds: [], status: 'Chưa thực hiện', deadline: '2026-10-17' });
 const seed = {
   departments: [{ id: 'KT', name: 'Phòng Kinh tế', email: 'kt@xa.vn' }, { id: 'LD', name: 'Lãnh đạo', email: 'ld@xa.vn' }, { id: 'VP', name: 'Văn phòng' }],
@@ -73,31 +72,20 @@ const seed = {
   petitions: [],
   events: [],
 };
-assert.equal((await call(data, { method: 'PUT', token: staff, body: { baseVersion: 0, data: seed } })).body.rejected, 1, 'chỉ admin đưa dữ liệu đầu tiên');
-r = await call(data, { method: 'PUT', token: admin, body: { baseVersion: 0, data: seed } });
+assert.equal((await call(data, { headers: { 'x-access-code': 'sai' } })).status, 401, 'sai mã');
+assert.equal((await call(data, { method: 'PUT', body: { baseVersion: 0, data: seed } })).status, 401, 'thiếu mã');
+r = await call(data, { method: 'PUT', ...code, body: { baseVersion: 0, data: seed } });
 assert.equal(r.body.version, 1);
+assert.equal((await call(data, { method: 'PUT', ...code, body: { baseVersion: 0, data: seed } })).status, 409, 'bản cũ → 409');
 
-// Staff KT: sửa việc của KT được, sửa việc VP và đổi tên phòng bị bỏ; thêm đơn thư cho phòng khác được (tiếp nhận)
 const edited = structuredClone(seed);
-edited.tasks = [task('a', 'KT', 'KT sửa'), task('b', 'VP', 'KT sửa trộm'), task('c', 'VP')];
-edited.departments[2].name = 'Đổi tên';
-edited.petitions = [{ id: 'p1', deptId: 'VP', collabDeptIds: [], status: 'Chưa thực hiện' }];
-r = await call(data, { method: 'PUT', token: staff, body: { baseVersion: 1, data: edited } });
-assert.equal(r.status, 200);
-assert.equal(r.body.rejected, 3);
-assert.deepEqual(r.body.data.tasks.map((t) => t.title), ['KT sửa', 'b']);
-assert.equal(r.body.data.departments[2].name, 'Văn phòng');
-assert.deepEqual(r.body.data.petitions.map((p) => p.id), ['p1']);
-
-// Viewer: không ghi được gì, phiên bản không tăng
-r = await call(data, { method: 'PUT', token: viewer, body: { baseVersion: 2, data: { ...r.body.data, tasks: [] } } });
+edited.tasks = [task('a', 'KT', 'KT sửa'), task('c', 'VP')];
+r = await call(data, { method: 'PUT', ...code, body: { baseVersion: 1, data: edited } });
 assert.equal(r.body.version, 2);
-assert.equal(r.body.rejected, 1);
+assert.deepEqual(r.body.data.tasks.map((t) => t.title), ['KT sửa', 'c']);
+assert.equal((await call(data, { ...code })).body.version, 2, 'GET trả bản mới nhất');
 
-// Bản cũ → 409
-assert.equal((await call(data, { method: 'PUT', token: admin, body: { baseVersion: 1, data: seed } })).status, 409);
-
-// Lãnh đạo sửa hồ sơ mọi phòng, không sửa danh mục
+// Lãnh đạo sửa hồ sơ mọi phòng, không sửa danh mục (hàm phân quyền trong _core.js)
 const leaderView = allowedChanges({ role: 'leader' }, seed, { ...seed, tasks: [task('a', 'KT', 'x'), task('b', 'VP', 'y')], departments: [] });
 assert.equal(leaderView.rejected, 3);
 assert.deepEqual(leaderView.data.tasks.map((t) => t.title), ['x', 'y']);
@@ -105,7 +93,7 @@ assert.deepEqual(leaderView.data.tasks.map((t) => t.title), ['x', 'y']);
 // Đặt lại mật khẩu: token cũ hết hiệu lực
 await new Promise((ok) => setTimeout(ok, 5));
 await call(users, { method: 'PATCH', token: admin, body: { username: 'cb.kt', password: 'moi-12345678' } });
-assert.equal((await call(data, { token: staff })).status, 401);
+assert.equal((await call(users, { token: staff })).status, 401);
 
 /* ---------- Email nhắc hạn ---------- */
 const mails = buildReminders({

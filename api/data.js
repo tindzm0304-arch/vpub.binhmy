@@ -1,16 +1,30 @@
-import { allowedChanges } from './_core.js';
-import {
-  DATA_PATH, readJson, writeJson, currentUser,
-} from './_store.js';
+import crypto from 'node:crypto';
+import { get, put } from '@vercel/blob';
 
 // Một file JSON duy nhất chứa toàn bộ dữ liệu nghiệp vụ. Store phải tạo ở chế độ Private.
-// Mỗi yêu cầu cần token đăng nhập (api/auth.js). Thay đổi ngoài quyền của tài khoản bị bỏ, giữ bản server (api/_core.js).
-const readDoc = () => readJson(DATA_PATH, { version: 0, data: null });
+const PATH = 'quan-ly-noi-bo/data.json';
+
+// Mã truy cập chung (biến ACCESS_CODE trên Vercel), mỗi máy nhập một lần. Không phân biệt hoa thường, bỏ dấu cách và gạch nối.
+// ponytail: không giới hạn số lần thử; mã dài 12 ký tự đủ chống đoán. Thêm rate limit nếu thấy nhiều yêu cầu 401 lạ trong log.
+const norm = (s) => String(s ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+function allowed(req) {
+  const want = norm(process.env.ACCESS_CODE);
+  if (!want) throw new Error('Thiếu biến môi trường ACCESS_CODE trên Vercel');
+  const given = norm(req.headers['x-access-code']);
+  return given.length === want.length && crypto.timingSafeEqual(Buffer.from(given), Buffer.from(want));
+}
+
+async function readDoc() {
+  // useCache: false để luôn đọc bản mới nhất, tránh ghi đè bản vừa được máy khác lưu
+  const result = await get(PATH, { access: 'private', useCache: false });
+  if (!result || result.statusCode !== 200) return { version: 0, data: null };
+  return JSON.parse(await new Response(result.stream).text());
+}
 
 export default async function handler(req, res) {
   try {
-    const user = await currentUser(req);
-    if (!user) return res.status(401).json({ error: 'Chưa đăng nhập hoặc phiên đã hết hạn' });
+    if (!allowed(req)) return res.status(401).json({ error: 'Sai mã truy cập' });
     if (req.method === 'GET') return res.json(await readDoc());
 
     if (req.method === 'PUT') {
@@ -19,19 +33,19 @@ export default async function handler(req, res) {
       const current = await readDoc();
       // Máy này đang sửa từ bản cũ: trả bản server để máy kia tải về, không ghi đè
       if (current.version !== (baseVersion ?? 0)) return res.status(409).json(current);
-      const { data: allowed, rejected } = allowedChanges(user, current.data, data);
-      // Không còn gì được phép thay đổi: không tăng phiên bản, trả lại bản server kèm số thay đổi bị bỏ
-      if (JSON.stringify(allowed) === JSON.stringify(current.data)) return res.json({ ...current, rejected });
-      const doc = {
-        version: current.version + 1, savedAt: new Date().toISOString(), savedBy: user.username, data: allowed,
-      };
-      await writeJson(DATA_PATH, doc);
-      return res.json({ ...doc, rejected });
+      const doc = { version: current.version + 1, savedAt: new Date().toISOString(), data };
+      await put(PATH, JSON.stringify(doc), {
+        access: 'private',
+        allowOverwrite: true,
+        addRandomSuffix: false,
+        contentType: 'application/json',
+      });
+      return res.json(doc);
     }
 
-    return res.status(405).end();
+    res.status(405).end();
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message });
   }
 }
