@@ -5,6 +5,7 @@ import {
 import { $, dateKey, formatLongDate } from './utils.js';
 import { initModals } from './modal.js';
 import { initAuth } from './auth.js';
+import { initSync } from './sync.js';
 import { initTasks, renderTasks } from './views/tasks.js';
 import { initCalendar, renderCalendar } from './views/calendar.js';
 import { initPersonnel, renderPersonnel } from './views/personnel.js';
@@ -145,6 +146,7 @@ function init() {
   initTheme();
   initModals();
   initAuth();
+  initSync();
   initTasks();
   initMine();
   initAutomation();

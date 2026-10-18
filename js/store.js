@@ -237,6 +237,12 @@ export function persist({ quiet = false } = {}) {
   window.dispatchEvent(new CustomEvent('store:change'));
 }
 
+/** Nạp dữ liệu lấy từ server: ghi vào trình duyệt rồi đọc lại. Không đẩy ngược lên server (sync.js lo việc đó). */
+export function applyRemote(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  loadStore();
+}
+
 /** Bản sao dữ liệu nghiệp vụ (gồm thùng rác, thư viện, nhật ký) dùng cho sao lưu. */
 export function snapshot() {
   return JSON.parse(JSON.stringify(store));
