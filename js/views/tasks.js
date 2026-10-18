@@ -13,7 +13,7 @@ import { rememberRecent } from '../recent.js';
 import { drawDonut } from '../donut.js';
 import { downloadWorkbook, dateCell } from '../excel.js';
 import {
-  $, $$, esc, fold, uid, dateKey, addDays, formatDate, formatDateTime, fileItem, fileMeta, fillOptions,
+  $, $$, esc, fold, uid, dateKey, addDays, formatDate, formatDateTime, fileItem, fillOptions,
   priorityBadge, sourceBadge, toast, wirePeriodFilter, wireKpiFilter, inRange,
   PRIORITIES, STATUSES, MANUAL_STATUSES, TODO, SOON, DONE, OVERDUE, REVIEW, CLOSED, statusChoices,
 } from '../utils.js';
@@ -29,9 +29,6 @@ let period = null;
 let boardMode = false; // false: danh sách, true: bảng cột theo trạng thái
 let form = { id: null, files: [] };
 let detailId = null;
-let previewFileId = null;
-let previewUrl = null;
-let previewToken = 0;
 const selected = new Set(); // công việc đã chọn để thao tác hàng loạt
 let visibleIds = []; // công việc đang hiện trong bảng (sau lọc)
 
@@ -79,16 +76,6 @@ export function initTasks() {
   initSavedFilters();
   $('#detail-approve').addEventListener('click', approveDetail);
   $('#detail-hint-btn').addEventListener('click', () => setDetailStatus(DONE));
-  $('#preview-close').addEventListener('click', resetPreview);
-  $('#preview-empty').addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-download]');
-    const file = btn && currentFile(btn.dataset.download);
-    if (file) downloadFile(file);
-  });
-  document.addEventListener('modal:closed', (e) => {
-    if (e.detail.id === 'task-detail-modal') resetPreview();
-  });
-  resetPreview();
 }
 
 /**
@@ -715,7 +702,6 @@ export function openTaskDetail(id) {
 
   paintDetailStatus(task);
   renderDetailFiles(task);
-  resetPreview();
   openModal('task-detail-modal');
 }
 
@@ -829,8 +815,7 @@ function renderDetailFiles(task) {
   $('#detail-file-list').innerHTML = task.files.length
     ? task.files.map((f) => fileItem(f, `
         <button type="button" class="icon-btn" data-download-file="${esc(f.id)}" title="Tải xuống" aria-label="Tải xuống ${esc(f.name)}"><i class="fa-solid fa-download"></i></button>
-        <button type="button" class="icon-btn is-danger" data-delete-file="${esc(f.id)}" title="Xóa tệp" aria-label="Xóa ${esc(f.name)}"><i class="fa-regular fa-trash-can"></i></button>`,
-    `data-preview-file="${esc(f.id)}"`)).join('')
+        <button type="button" class="icon-btn is-danger" data-delete-file="${esc(f.id)}" title="Xóa tệp" aria-label="Xóa ${esc(f.name)}"><i class="fa-regular fa-trash-can"></i></button>`)).join('')
     : '<div class="empty-inline">Chưa có tài liệu đính kèm.</div>';
 }
 
@@ -869,8 +854,6 @@ function onDetailFilesClick(e) {
     deleteDetailFile(remove.dataset.deleteFile);
     return;
   }
-  const row = e.target.closest('[data-preview-file]');
-  if (row) previewFile(currentFile(row.dataset.previewFile));
 }
 
 async function deleteDetailFile(fileId) {
@@ -885,97 +868,9 @@ async function deleteDetailFile(fileId) {
   if (!ok) return;
   task.files = task.files.filter((f) => f.id !== fileId);
   deleteBlobs([fileId]).catch((err) => console.warn(err));
-  if (previewFileId === fileId) resetPreview();
   persist();
   renderDetailFiles(task);
   toast('Đã xóa tệp', 'success');
-}
-
-/* ---------------- Xem trước & tải tệp ---------------- */
-
-function setPreviewEmpty(html) {
-  const el = $('#preview-empty');
-  el.hidden = false;
-  el.innerHTML = html;
-}
-
-function placeholderHtml(file, message, canDownload) {
-  const meta = fileMeta(file.type, file.name);
-  return `
-    <div class="preview-placeholder">
-      <span class="file-icon-lg ${meta.cls}"><i class="fa-solid ${meta.icon}"></i></span>
-      <p class="preview-title">${esc(file.name)}</p>
-      <small>${esc(message)}</small>
-      ${canDownload ? `<button type="button" class="btn btn-primary btn-sm" data-download="${esc(file.id)}"><i class="fa-solid fa-download"></i> Tải xuống</button>` : ''}
-    </div>`;
-}
-
-async function previewFile(file) {
-  if (!file) return;
-  const token = ++previewToken;
-  revokePreview();
-  previewFileId = file.id;
-  $('#preview-head').hidden = false;
-  $('#preview-name').textContent = file.name;
-  $('#preview-img').hidden = true;
-  $('#preview-frame').hidden = true;
-  setPreviewEmpty('<div class="preview-placeholder"><i class="fa-solid fa-spinner fa-spin"></i><small>Đang tải tệp…</small></div>');
-
-  const blob = file.sample ? null : await getBlob(file.id).catch(() => null);
-  if (token !== previewToken) return;
-
-  if (!blob) {
-    setPreviewEmpty(placeholderHtml(
-      file,
-      file.sample ? 'Đây là tệp mẫu, chưa có nội dung để xem.' : 'Không tìm thấy nội dung tệp trên thiết bị này.',
-      false,
-    ));
-    return;
-  }
-
-  previewUrl = URL.createObjectURL(blob);
-  const type = file.type || '';
-  const isImage = type.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg)$/i.test(file.name);
-  const isPdf = type === 'application/pdf' || /\.pdf$/i.test(file.name);
-  if (isImage) {
-    const img = $('#preview-img');
-    img.src = previewUrl;
-    img.alt = file.name;
-    img.hidden = false;
-    $('#preview-empty').hidden = true;
-  } else if (isPdf) {
-    const frame = $('#preview-frame');
-    frame.src = previewUrl;
-    frame.title = file.name;
-    frame.hidden = false;
-    $('#preview-empty').hidden = true;
-  } else {
-    setPreviewEmpty(placeholderHtml(file, 'Định dạng này chưa hỗ trợ xem trước. Bạn có thể tải xuống để mở.', true));
-  }
-}
-
-function revokePreview() {
-  if (previewUrl) URL.revokeObjectURL(previewUrl);
-  previewUrl = null;
-}
-
-function resetPreview() {
-  previewToken++;
-  previewFileId = null;
-  revokePreview();
-  $('#preview-head').hidden = true;
-  const img = $('#preview-img');
-  img.hidden = true;
-  img.removeAttribute('src');
-  const frame = $('#preview-frame');
-  frame.hidden = true;
-  frame.removeAttribute('src');
-  setPreviewEmpty(`
-    <div class="preview-placeholder">
-      <span class="file-icon-lg"><i class="fa-regular fa-file-lines"></i></span>
-      <p class="preview-title">Chọn một tài liệu để xem trước</p>
-      <small>Hỗ trợ tệp PDF và hình ảnh</small>
-    </div>`);
 }
 
 async function downloadFile(file) {
