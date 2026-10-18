@@ -136,7 +136,7 @@ function countReflections(today) {
   return counts;
 }
 
-/** Hộp tổng hợp: số liệu toàn bộ phản ánh và số lượng theo khu vực. */
+/** Tổng hợp hiện ngay trên đầu màn hình Phản ánh 1022: số liệu toàn bộ và số lượng theo khu vực. */
 function openSummary() {
   const counts = countReflections(dateKey());
   const byArea = {};
@@ -144,7 +144,8 @@ function openSummary() {
     const area = r.area || 'Chưa rõ khu vực';
     byArea[area] = (byArea[area] ?? 0) + 1;
   }
-  const areaRows = Object.entries(byArea).sort((a, b) => b[1] - a[1]);
+  const areaChips = Object.entries(byArea).sort((a, b) => b[1] - a[1])
+    .map(([area, n]) => `<span class="chip"><i class="fa-solid fa-location-dot"></i> ${esc(area)}: <b>${n}</b></span>`).join(' ');
   $('#pa-summary-body').innerHTML = counts.total ? `
     <div class="kpi-grid-2">
       <div class="card kpi tone-slate"><span class="kpi-label">Tổng phản ánh</span><div class="kpi-value">${counts.total}</div></div>
@@ -152,13 +153,8 @@ function openSummary() {
       <div class="card kpi tone-amber"><span class="kpi-label">Sắp đến hạn</span><div class="kpi-value">${counts.soon}</div></div>
       <div class="card kpi tone-red"><span class="kpi-label">Quá hạn</span><div class="kpi-value">${counts.overdue}</div></div>
     </div>
-    <div class="table-wrap">
-      <table class="table">
-        <thead><tr><th scope="col">Khu vực</th><th scope="col" class="t-right">Số phản ánh</th></tr></thead>
-        <tbody>${areaRows.map(([area, n]) => `<tr><td>${esc(area)}</td><td class="t-right">${n}</td></tr>`).join('')}</tbody>
-      </table>
-    </div>` : '<div class="empty-inline">Chưa có phản ánh nào.</div>';
-  openModal('pa-summary-modal');
+    <div class="meta-line">${areaChips}</div>` : '<div class="empty-inline">Chưa có phản ánh nào.</div>';
+  $('#pa-summary').hidden = false;
 }
 
 function reflectionRow(r, today, stt) {

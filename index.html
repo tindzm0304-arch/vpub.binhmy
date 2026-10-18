@@ -4,7 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Quản lý giao việc, lịch công tác và nhân sự nội bộ — UBND Xã Bình Mỹ">
-  <meta name="theme-color" content="#0c1528">
+  <meta name="theme-color" content="#1d4ed8">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="QL Bình Mỹ">
   <title>Quản lý Nội bộ · UBND Xã Bình Mỹ</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%232563eb'/%3E%3Ctext x='32' y='43' font-family='Arial' font-size='32' font-weight='700' text-anchor='middle' fill='white'%3EQ%3C/text%3E%3C/svg%3E">
 
@@ -146,6 +150,9 @@
           <button class="auth-chip" id="auth-toggle" type="button" aria-label="Đăng nhập admin">
             <i class="fa-solid fa-user-lock" aria-hidden="true"></i>
             <span id="auth-text">Chưa đăng nhập</span>
+          </button>
+          <button class="icon-btn" id="install-app" type="button" aria-label="Cài ứng dụng lên máy" title="Cài ứng dụng" hidden>
+            <i class="fa-solid fa-download"></i>
           </button>
           <button class="icon-btn" id="search-open" type="button" aria-label="Tìm kiếm toàn hệ thống (Ctrl+K)" title="Tìm kiếm (Ctrl+K)">
             <i class="fa-solid fa-magnifying-glass"></i>
@@ -526,6 +533,20 @@
             </a>
           </div>
 
+          <div class="card ov-pad ov-trend-card">
+            <div class="ov-head ov-trend-head">
+              <div>
+                <h2 class="card-title">Xu hướng 12 tháng</h2>
+                <p class="ov-note" id="ov-trend-note"></p>
+              </div>
+              <div class="segmented" id="ov-trend-source" role="group" aria-label="Chọn nguồn hồ sơ"></div>
+            </div>
+            <div class="trend-stats" id="ov-trend-stats"></div>
+            <div class="trend-wrap">
+              <canvas id="ov-trend" role="img" aria-label="Biểu đồ số hồ sơ tiếp nhận, giải quyết và tỷ lệ đúng hạn theo tháng"></canvas>
+            </div>
+          </div>
+
           <div class="ov-main">
             <div class="card ov-pad ov-flow-card">
               <div class="ov-head">
@@ -899,6 +920,10 @@
 
         <!-- ===== VIEW: PHẢN ÁNH 1022 ===== -->
         <section class="view" id="view-reflections" aria-label="Phản ánh 1022" hidden>
+          <div class="card" id="pa-summary" hidden>
+            <h2 class="card-title">Tổng hợp phản ánh 1022</h2>
+            <div id="pa-summary-body"></div>
+          </div>
           <div class="card toolbar">
             <div class="toolbar-group">
               <label class="search">
@@ -1274,6 +1299,7 @@
         </h2>
         <div class="head-actions">
           <select class="input status-select" id="detail-status" aria-label="Cập nhật trạng thái"></select>
+          <button class="icon-btn" type="button" data-copy-link aria-label="Sao chép liên kết tới hồ sơ này" title="Sao chép liên kết"><i class="fa-solid fa-link"></i></button>
           <button class="icon-btn" type="button" data-close="task-detail-modal" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
         </div>
       </header>
@@ -1416,7 +1442,10 @@
     <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="event-detail-title">
       <header class="modal-head">
         <h2 class="modal-title" id="event-detail-title">Chi tiết lịch công tác</h2>
-        <button class="icon-btn" type="button" data-close="event-detail-modal" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+        <div class="head-actions">
+          <button class="icon-btn" type="button" data-copy-link aria-label="Sao chép liên kết tới hồ sơ này" title="Sao chép liên kết"><i class="fa-solid fa-link"></i></button>
+          <button class="icon-btn" type="button" data-close="event-detail-modal" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+        </div>
       </header>
       <div class="modal-body">
         <span class="badge" id="event-detail-type"></span>
@@ -1481,6 +1510,7 @@
   <div class="modal" id="person-detail-modal" hidden>
     <div class="modal-panel wide" role="dialog" aria-modal="true" aria-labelledby="pd-name">
       <div class="profile-banner">
+        <button class="icon-btn banner-close banner-link" type="button" data-copy-link aria-label="Sao chép liên kết tới hồ sơ này" title="Sao chép liên kết"><i class="fa-solid fa-link"></i></button>
         <button class="icon-btn banner-close" type="button" data-close="person-detail-modal" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="modal-body profile-body">
@@ -1626,6 +1656,7 @@
         </h2>
         <div class="head-actions">
           <select class="input status-select" id="ptd-status" aria-label="Cập nhật tình trạng"></select>
+          <button class="icon-btn" type="button" data-copy-link aria-label="Sao chép liên kết tới hồ sơ này" title="Sao chép liên kết"><i class="fa-solid fa-link"></i></button>
           <button class="icon-btn" type="button" data-close="petition-detail-modal" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
         </div>
       </header>
@@ -1672,22 +1703,6 @@
   </div>
 
   <!-- ================= MODAL: TIẾP NHẬN PHẢN ÁNH 1022 ================= -->
-  <div class="modal" id="pa-summary-modal" hidden>
-    <div class="modal-panel wide" role="dialog" aria-modal="true" aria-labelledby="pa-summary-title">
-      <header class="modal-head">
-        <h2 class="modal-title">
-          <span class="title-icon"><i class="fa-solid fa-tower-broadcast"></i></span>
-          <span id="pa-summary-title">Tổng hợp phản ánh 1022</span>
-        </h2>
-        <button class="icon-btn" type="button" data-close="pa-summary-modal" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
-      </header>
-      <div class="modal-body" id="pa-summary-body"></div>
-      <footer class="modal-foot">
-        <button class="btn btn-primary" type="button" data-close="pa-summary-modal" data-autofocus>Đóng</button>
-      </footer>
-    </div>
-  </div>
-
   <div class="modal" id="reflection-modal" hidden>
     <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="pa-modal-title">
       <header class="modal-head">
@@ -1781,6 +1796,7 @@
         </h2>
         <div class="head-actions">
           <select class="input status-select" id="pad-status" aria-label="Cập nhật tình trạng"></select>
+          <button class="icon-btn" type="button" data-copy-link aria-label="Sao chép liên kết tới hồ sơ này" title="Sao chép liên kết"><i class="fa-solid fa-link"></i></button>
           <button class="icon-btn" type="button" data-close="reflection-detail-modal" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
         </div>
       </header>
@@ -1911,7 +1927,10 @@
           <span class="title-icon"><i class="fa-solid fa-stamp"></i></span>
           <span id="btd-resolution"></span>
         </h2>
-        <button class="icon-btn" type="button" data-close="btv-detail-modal" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+        <div class="head-actions">
+          <button class="icon-btn" type="button" data-copy-link aria-label="Sao chép liên kết tới hồ sơ này" title="Sao chép liên kết"><i class="fa-solid fa-link"></i></button>
+          <button class="icon-btn" type="button" data-close="btv-detail-modal" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+        </div>
       </header>
       <div class="detail-scroll">
         <div>
