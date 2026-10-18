@@ -17,7 +17,6 @@ const SENSITIVE_TYPES = ['Khiếu nại', 'Tố cáo'];
 const TARGETS = {
   tasks: { view: 'tasks', filter: ['#task-status-filter', 'all'] },
   btv: { view: 'btv' },
-  'tasks-done': { view: 'tasks', filter: ['#task-status-filter', 'Hoàn thành'] },
   'petitions-open': { view: 'petitions', filter: ['#pt-state', 'all'] },
   'reflections-open': { view: 'reflections', filter: ['#pa-state', 'open'] },
   attention: { scrollTo: '#ov-attention' },
@@ -68,7 +67,6 @@ export function renderOverview() {
   const today = dateKey();
   const tasks = store.tasks;
   const openTasks = tasks.filter((t) => taskState(t, today) !== 'closed');
-  const doneTasks = tasks.length - openTasks.length;
   const openPetitions = store.petitions.filter((p) => petitionState(p, today) !== 'closed');
   const openReflections = store.reflections.filter((r) => reflectionState(r, today) !== 'closed');
 
@@ -76,7 +74,7 @@ export function renderOverview() {
     + openPetitions.filter((p) => petitionState(p, today) === 'overdue').length
     + openReflections.filter((r) => reflectionState(r, today) === 'overdue').length;
 
-  renderKpis({ today, openTasks, openPetitions, openReflections, doneTasks, overdueAll });
+  renderKpis({ today, openTasks, openPetitions, openReflections, overdueAll });
   renderFlow(today);
   renderAttention(today);
   renderDepartments(today);
@@ -84,7 +82,7 @@ export function renderOverview() {
 }
 
 /* Màu theo mức hạn, dùng chung cho các biểu đồ. */
-const COLORS = { ok: '#10b981', soon: '#f59e0b', overdue: '#ef4444', done: '#10b981', rest: '#cbd5e1' };
+const COLORS = { ok: '#10b981', soon: '#f59e0b', overdue: '#ef4444' };
 
 /** Đếm số mục đang mở theo mức hạn: trong hạn, sắp đến hạn, quá hạn. */
 function countStates(list, stateOf, today) {
@@ -96,14 +94,12 @@ function countStates(list, stateOf, today) {
   return counts;
 }
 
-function renderKpis({ today, openTasks, openPetitions, openReflections, doneTasks, overdueAll }) {
+function renderKpis({ today, openTasks, openPetitions, openReflections, overdueAll }) {
   const isBtv = (t) => t.source === 'btv';
   const ttubCounts = countStates(openTasks.filter((t) => !isBtv(t)), taskState, today);
   const btvCounts = countStates(openTasks.filter(isBtv), taskState, today);
   const petitionCounts = countStates(openPetitions, petitionState, today);
   const reflectionCounts = countStates(openReflections, reflectionState, today);
-  const total = store.tasks.length;
-  const rate = total ? Math.round((doneTasks / total) * 100) : 0;
 
   const byDueState = (c) => [
     { label: 'Trong hạn', value: c.ok, color: COLORS.ok },
@@ -121,10 +117,6 @@ function renderKpis({ today, openTasks, openPetitions, openReflections, doneTask
     { label: 'Đơn thư', value: petitionCounts.overdue, color: '#f97316' },
     { label: 'Phản ánh', value: reflectionCounts.overdue, color: '#f43f5e' },
   ], overdueAll, 'quá hạn');
-  drawDonut('ov-c-rate', [
-    { label: 'Hoàn thành', value: doneTasks, color: COLORS.done },
-    { label: 'Chưa xong', value: total - doneTasks, color: COLORS.rest },
-  ], `${rate}%`, 'hoàn thành');
 }
 
 /** Luồng xử lý: đơn thư và phản ánh (chưa chuyển đơn) từ lúc tiếp nhận đến khi giải quyết. */

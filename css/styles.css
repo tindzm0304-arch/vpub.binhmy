@@ -905,7 +905,7 @@ fieldset.field { margin: 0; padding: 0; border: none; }
 
 /* ---------- Tổng hợp hệ thống ---------- */
 .ov-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
-@media (min-width: 1440px) { .ov-kpis { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+@media (min-width: 1440px) { .ov-kpis { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
 @media (max-width: 640px) { .ov-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .ov-kpis > * { min-width: 0; }
 .ov-kpi { gap: 8px; color: inherit; text-decoration: none; cursor: pointer; transition: transform .15s, border-color .15s, box-shadow .15s; }
