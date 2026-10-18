@@ -71,6 +71,20 @@
   .topbar-actions .icon-btn { width: 42px; height: 42px; }
 }
 
+/* Nút đăng nhập nằm cuối thanh công cụ (sidebar) */
+.sidebar-auth {
+  flex-shrink: 0; height: 44px; margin: auto 14px 18px; justify-content: center;
+  border-color: rgb(255 255 255 / 0.28); background: rgb(255 255 255 / 0.1); color: #fff;
+}
+.sidebar-auth:hover { background: rgb(255 255 255 / 0.18); border-color: rgb(255 255 255 / 0.5); }
+.sidebar-auth i { color: #fff; }
+.sidebar-auth.is-admin { border-color: rgb(134 239 172 / 0.6); }
+.sidebar-auth.is-admin i { color: #86efac; }
+.sidebar .sidebar-auth span { display: inline; }
+.sidebar .sidebar-auth { width: auto; padding: 0 14px; }
+.app.is-collapsed .sidebar .sidebar-auth { width: 46px; padding: 0; margin: auto auto 18px; }
+.app.is-collapsed .sidebar .sidebar-auth span { display: none; }
+
 .login-hint { margin: 0 0 14px; color: var(--text-2); }
 .login-err { margin: -4px 0 12px; color: var(--danger); font-weight: 600; }
 .sub-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
