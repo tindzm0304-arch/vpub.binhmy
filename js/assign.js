@@ -16,7 +16,7 @@ export function fillAssignerSelect(select, value = '') {
   const people = store.personnel
     .filter((p) => leaderId && p.deptId === leaderId)
     .sort((a, b) => a.name.localeCompare(b.name, 'vi'));
-  const leading = people.length ? '<option value="">Chọn người giao…</option>' : '<option value="">Phòng này chưa có cán bộ</option>';
+  const leading = people.length ? '<option value="">Chọn người giao…</option>' : '<option value="">Phòng Lãnh đạo chưa có cán bộ</option>';
   fillOptions(select, people.map((p) => [p.id, p.title ? `${p.name} (${p.title})` : p.name]), leading);
   select.value = people.some((p) => p.id === value) ? value : '';
 }
