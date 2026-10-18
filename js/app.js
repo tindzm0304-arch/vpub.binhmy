@@ -50,6 +50,7 @@ const VIEWS = {
   activity: { title: 'Nhật ký thay đổi', subtitle: 'Các thay đổi gần nhất trên máy này', render: renderActivity },
 };
 const THEME_KEY = 'quan-ly-noi-bo:theme';
+const FIRST_OPEN_KEY = 'quan-ly-noi-bo:da-mo-lan-dau';
 const MOBILE = window.matchMedia('(max-width: 960px)');
 
 let activeView = 'overview';
@@ -175,6 +176,13 @@ function init() {
 
   tick();
   setInterval(tick, 1000);
+  // Lần đầu mở trên máy này: vào Dashboard hệ thống, bỏ qua màn đang nhớ trong địa chỉ
+  try {
+    if (!localStorage.getItem(FIRST_OPEN_KEY)) {
+      localStorage.setItem(FIRST_OPEN_KEY, '1');
+      history.replaceState(null, '', '#overview');
+    }
+  } catch { /* trình duyệt chặn localStorage: giữ hành vi cũ */ }
   showView(routeName());
 }
 
