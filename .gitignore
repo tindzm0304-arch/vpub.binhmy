@@ -1,0 +1,14 @@
+# Hệ điều hành & trình soạn thảo
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+
+# Cấu hình cục bộ của công cụ AI
+.claude/
+
+# Bản HTML cũ (lưu để đối chiếu, không đưa lên web)
+archive/
+
+# Phụ thuộc (nếu về sau dùng npm)
+node_modules/

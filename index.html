@@ -1,0 +1,2105 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Quản lý giao việc, lịch công tác và nhân sự nội bộ — UBND Xã Bình Mỹ">
+  <meta name="theme-color" content="#0c1528">
+  <title>Quản lý Nội bộ · UBND Xã Bình Mỹ</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%232563eb'/%3E%3Ctext x='32' y='43' font-family='Arial' font-size='32' font-weight='700' text-anchor='middle' fill='white'%3EQ%3C/text%3E%3C/svg%3E">
+
+  <!-- Chọn giao diện sáng/tối trước khi trang hiển thị để tránh nháy màu -->
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem('quan-ly-noi-bo:theme');
+        var dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.dataset.theme = saved || (dark ? 'dark' : 'light');
+      } catch (e) { /* bỏ qua: dùng giao diện sáng */ }
+    })();
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/features.css">
+  <link rel="stylesheet" href="css/automation.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+  <script type="module" src="js/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#content">Chuyển tới nội dung chính</a>
+  <noscript><p style="padding:24px">Ứng dụng cần bật JavaScript để hoạt động.</p></noscript>
+
+  <div class="app" id="app">
+    <!-- ============ MENU TRÁI ============ -->
+    <aside class="sidebar" aria-label="Menu chính">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"><i class="fa-solid fa-landmark"></i></div>
+        <div class="brand-text">
+          <strong>QUẢN LÝ NỘI BỘ</strong>
+          <span>UBND Xã Bình Mỹ</span>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <a class="nav-item" href="#overview" data-nav="overview">
+          <i class="fa-solid fa-gauge-high"></i>
+          <span class="nav-text">Dashboard hệ thống</span>
+        </a>
+        <a class="nav-item" href="#calendar" data-nav="calendar">
+          <i class="fa-regular fa-calendar-days"></i>
+          <span class="nav-text">Lịch công tác</span>
+        </a>
+        <a class="nav-item" href="#reports" data-nav="reports">
+          <i class="fa-regular fa-file-lines"></i>
+          <span class="nav-text">Báo cáo định kỳ</span>
+        </a>
+
+        <span class="nav-label nav-group-gap">Công việc & tiếp dân</span>
+        <a class="nav-item" href="#btv" data-nav="btv">
+          <i class="fa-solid fa-stamp"></i>
+          <span class="nav-text">Giao việc BTV</span>
+          <span class="nav-count" data-nav-count="btv" hidden></span>
+        </a>
+        <a class="nav-item" href="#tasks" data-nav="tasks">
+          <i class="fa-solid fa-list-check"></i>
+          <span class="nav-text">Giao việc TTUB</span>
+          <span class="nav-count" data-nav-count="tasks" hidden></span>
+        </a>
+        <a class="nav-item" href="#petitions" data-nav="petitions">
+          <i class="fa-solid fa-envelope-open-text"></i>
+          <span class="nav-text">Đơn thư, PAKN</span>
+          <span class="nav-count" data-nav-count="petitions" hidden></span>
+        </a>
+        <a class="nav-item" href="#reflections" data-nav="reflections">
+          <i class="fa-solid fa-tower-broadcast"></i>
+          <span class="nav-text">Phản ánh 1022</span>
+          <span class="nav-count" data-nav-count="reflections" hidden></span>
+        </a>
+        <a class="nav-item" href="#library" data-nav="library">
+          <i class="fa-solid fa-box-archive"></i>
+          <span class="nav-text">Thư viện</span>
+        </a>
+
+        <a class="nav-item" href="#mine" data-nav="mine">
+          <i class="fa-solid fa-user-check"></i>
+          <span class="nav-text">Việc cần xử lý</span>
+        </a>
+
+        <span class="nav-label nav-group-gap" data-admin-group hidden>Quản lý chung</span>
+        <a class="nav-item" href="#personnel" data-nav="personnel" data-admin-group hidden>
+          <i class="fa-solid fa-user-group"></i>
+          <span class="nav-text">Nhân sự</span>
+        </a>
+        <a class="nav-item" href="#departments" data-nav="departments" data-admin-group hidden>
+          <i class="fa-solid fa-sitemap"></i>
+          <span class="nav-text">Phòng ban</span>
+        </a>
+
+        <span class="nav-label nav-group-gap" data-admin-group hidden>Cài đặt</span>
+        <a class="nav-item" href="#backup" data-nav="backup" data-admin-group hidden>
+          <i class="fa-solid fa-shield-halved"></i>
+          <span class="nav-text">Sao lưu dữ liệu</span>
+        <a class="nav-item" href="#notify" data-nav="notify" data-admin-group hidden>
+          <i class="fa-regular fa-bell"></i>
+          <span class="nav-text">Thông báo, nhắc hạn</span>
+        </a>
+        <a class="nav-item" href="#automation" data-nav="automation" data-admin-group hidden>
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+          <span class="nav-text">Tự động hóa</span>
+        </a>
+        <a class="nav-item" href="#health" data-nav="health" data-admin-group hidden>
+          <i class="fa-solid fa-stethoscope"></i>
+          <span class="nav-text">Kiểm tra dữ liệu</span>
+        </a>
+        <a class="nav-item" href="#trash" data-nav="trash" data-admin-group hidden>
+          <i class="fa-regular fa-trash-can"></i>
+          <span class="nav-text">Thùng rác</span>
+        </a>
+        <a class="nav-item" href="#activity" data-nav="activity" data-admin-group hidden>
+          <i class="fa-solid fa-clock-rotate-left"></i>
+          <span class="nav-text">Nhật ký</span>
+        </a>
+      </nav>
+    </aside>
+    <div class="scrim" id="scrim"></div>
+
+    <!-- ============ NỘI DUNG CHÍNH ============ -->
+    <main class="main">
+      <header class="topbar">
+        <button class="icon-btn" id="menu-toggle" type="button" aria-label="Mở hoặc thu gọn menu" aria-controls="app">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="topbar-title">
+          <h1 id="page-title">Quản lý Giao việc</h1>
+          <p id="page-subtitle"></p>
+        </div>
+        <div class="topbar-actions">
+          <div class="clock">
+            <span id="clock-date"></span>
+            <strong id="clock-time">--:--:--</strong>
+          </div>
+          <button class="auth-chip" id="auth-toggle" type="button" aria-label="Đăng nhập admin">
+            <i class="fa-solid fa-user-lock" aria-hidden="true"></i>
+            <span id="auth-text">Chưa đăng nhập</span>
+          </button>
+          <button class="icon-btn" id="search-open" type="button" aria-label="Tìm kiếm toàn hệ thống (Ctrl+K)" title="Tìm kiếm (Ctrl+K)">
+            <i class="fa-solid fa-magnifying-glass"></i>
+          </button>
+          <div class="notify-wrap">
+            <button class="icon-btn" id="notify-toggle" type="button" aria-label="Thông báo" aria-expanded="false" aria-controls="notify-panel">
+              <i class="fa-regular fa-bell"></i>
+              <span class="notify-count" id="notify-count" hidden></span>
+            </button>
+            <div class="notify-panel" id="notify-panel" role="dialog" aria-label="Thông báo" hidden>
+              <div class="notify-head">
+                <strong>Thông báo</strong>
+                <div class="segmented" role="group" aria-label="Lọc thông báo">
+                  <button type="button" data-nf="unread" aria-pressed="true">Chưa đọc</button>
+                  <button type="button" data-nf="all" aria-pressed="false">Tất cả</button>
+                </div>
+              </div>
+              <div class="notify-list" id="notify-list"></div>
+              <div class="notify-foot">
+                <button class="btn btn-ghost btn-sm" type="button" id="notify-read-all"><i class="fa-solid fa-check-double"></i> Đã đọc hết</button>
+                <button class="btn btn-secondary btn-sm" type="button" id="notify-digest" title="Sao chép danh sách việc cần nhắc theo từng phòng để dán vào nhóm Zalo">
+                  <i class="fa-regular fa-copy"></i> Sao chép bản tin nhắc việc
+                </button>
+              </div>
+            </div>
+          </div>
+          <button class="icon-btn" id="theme-toggle" type="button" aria-label="Chuyển giao diện">
+            <i class="fa-solid fa-moon"></i>
+          </button>
+        </div>
+      </header>
+
+      <div class="content" id="content" tabindex="-1">
+
+        <!-- Sao lưu -->
+        <section class="view" id="view-backup" aria-label="Sao lưu dữ liệu" hidden>
+          <div class="set-card">
+            <div class="set-head">
+              <span class="set-ico tone-blue"><i class="fa-solid fa-download"></i></span>
+              <div>
+                <h3>Tải bản sao lưu</h3>
+                <p class="set-note">Dữ liệu chỉ nằm trong trình duyệt của máy này — xóa lịch sử duyệt web hoặc đổi máy là mất. Hãy sao lưu định kỳ và cất file ở nơi an toàn (Google Drive, USB).</p>
+              </div>
+            </div>
+            <p class="set-line"><i class="fa-solid fa-database"></i> <span id="bk-summary"></span></p>
+            <p class="set-line" id="bk-last"></p>
+            <label class="check-line">
+              <input type="checkbox" id="bk-files">
+              <span>Kèm nội dung tệp đính kèm <small>(file sao lưu sẽ lớn hơn)</small></span>
+            </label>
+            <div class="btn-group">
+              <button class="btn btn-primary" type="button" id="bk-export"><i class="fa-solid fa-download"></i> Tải bản sao lưu (.json)</button>
+            </div>
+          </div>
+
+          <div class="set-card">
+            <div class="set-head">
+              <span class="set-ico tone-amber"><i class="fa-solid fa-rotate-left"></i></span>
+              <div>
+                <h3>Khôi phục từ bản sao lưu</h3>
+                <p class="set-note">Dữ liệu hiện tại trên máy này sẽ được thay bằng bản sao lưu. Hệ thống giữ lại dữ liệu cũ để hoàn tác nếu chọn nhầm.</p>
+              </div>
+            </div>
+            <div class="dropzone" id="bk-drop" role="button" tabindex="0">
+              <i class="fa-solid fa-file-shield" aria-hidden="true"></i>
+              <strong>Nhấn để chọn hoặc kéo thả file sao lưu vào đây</strong>
+              <small>File .json tải từ nút "Tải bản sao lưu" · chưa ghi gì cho tới khi bạn xác nhận</small>
+            </div>
+            <input type="file" id="bk-file" accept=".json,application/json" hidden>
+            <div class="bk-preview" id="bk-preview" hidden></div>
+            <div class="bk-undo" id="bk-undo" hidden></div>
+          </div>
+
+          <div class="set-card">
+            <div class="set-head">
+              <span class="set-ico tone-green"><i class="fa-solid fa-clock-rotate-left"></i></span>
+              <div>
+                <h3>Tự sao lưu trên trình duyệt</h3>
+                <p class="set-note">Mỗi ngày khi mở ứng dụng, hệ thống lưu một bản trong trình duyệt (tối đa 7 bản). Bản này không cần tải file và giúp quay lại khi lỡ xóa hoặc sửa nhầm.</p>
+              </div>
+            </div>
+            <label class="sync-toggle">
+              <input type="checkbox" id="bk-auto">
+              <span>
+                <strong>Tự sao lưu mỗi ngày</strong>
+                <small>Dữ liệu tự sao lưu vẫn nằm trên máy này, không thay thế việc tải file sao lưu định kỳ.</small>
+              </span>
+            </label>
+            <div class="btn-group set-actions">
+              <button class="btn btn-secondary btn-sm" type="button" id="bk-auto-now"><i class="fa-solid fa-floppy-disk"></i> Lưu một bản ngay</button>
+            </div>
+            <p class="set-line" id="bk-auto-last"></p>
+            <div class="auto-list" id="bk-auto-list"></div>
+          </div>
+        </section>
+
+        <!-- ===== VIEW: DASHBOARD HỆ THỐNG (chỉ đọc dữ liệu) ===== -->
+        <!-- Thông báo -->
+        <section class="view" id="view-notify" aria-label="Thông báo, nhắc hạn" hidden>
+          <div class="notice-summary" id="nf-summary" aria-live="polite"></div>
+          <div class="set-card">
+            <div class="set-head">
+              <span class="set-ico tone-amber"><i class="fa-regular fa-bell"></i></span>
+              <div>
+                <h3>Nhắc hạn</h3>
+                <p class="set-note">Áp dụng cho bảng thông báo (biểu tượng chuông) và thông báo trên màn hình.</p>
+              </div>
+            </div>
+            <div class="form-grid set-grid">
+              <div class="field">
+                <label class="label" for="nf-lead">Nhắc trước hạn</label>
+                <select class="input" id="nf-lead"></select>
+              </div>
+              <div class="field">
+                <label class="label" for="nf-escalate">Đánh dấu "cần báo lãnh đạo" khi quá hạn từ</label>
+                <select class="input" id="nf-escalate"></select>
+              </div>
+              <div class="field">
+                <label class="label" for="nf-backup">Nhắc sao lưu khi quá</label>
+                <select class="input" id="nf-backup"></select>
+              </div>
+            </div>
+          </div>
+
+          <div class="set-card">
+            <div class="set-head">
+              <span class="set-ico tone-amber"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
+              <div>
+                <h3>Quy tắc nhắc tự động</h3>
+                <p class="set-note">Chọn mốc để hệ thống tự nhắc trong bảng thông báo. Hệ thống chỉ theo quy tắc đã cài, không tự quyết định thay người xử lý.</p>
+              </div>
+            </div>
+            <div class="form-grid set-grid">
+              <div class="field">
+                <label class="label" for="nf-rule-petition">Đơn Khiếu nại / Tố cáo chưa có công việc</label>
+                <select class="input" id="nf-rule-petition"></select>
+              </div>
+              <div class="field">
+                <label class="label" for="nf-rule-review">Công việc chờ duyệt quá lâu</label>
+                <select class="input" id="nf-rule-review"></select>
+              </div>
+            </div>
+          </div>
+
+          <div class="set-card">
+            <div class="set-head">
+              <span class="set-ico tone-blue"><i class="fa-solid fa-user-check"></i></span>
+              <div>
+                <h3>Duyệt trước khi hoàn thành</h3>
+                <p class="set-note">Khi bật, chọn "Hoàn thành" cho công việc sẽ chuyển sang "Chờ duyệt". Lãnh đạo bấm "Duyệt và hoàn thành" trong chi tiết công việc để kết thúc.</p>
+              </div>
+            </div>
+            <label class="sync-toggle">
+              <input type="checkbox" id="nf-approval">
+              <span>
+                <strong>Yêu cầu duyệt trước khi hoàn thành</strong>
+                <small>Mặc định tắt. Áp dụng cho Giao việc TTUB; Giao việc BTV giữ quy trình báo cáo riêng.</small>
+              </span>
+            </label>
+          </div>
+
+          <div class="set-card">
+            <div class="set-head">
+              <span class="set-ico tone-blue"><i class="fa-solid fa-desktop"></i></span>
+              <div>
+                <h3>Thông báo trên màn hình máy tính</h3>
+                <p class="set-note">Hiện thông báo của Windows khi có việc quá hạn, đến hạn hôm nay hoặc ngày mai — kể cả khi đang làm ở cửa sổ khác. Trang này cần được mở trong trình duyệt.</p>
+              </div>
+            </div>
+            <label class="sync-toggle">
+              <input type="checkbox" id="nf-desktop">
+              <span>
+                <strong>Bật thông báo trên màn hình</strong>
+                <small id="nf-desktop-state"></small>
+              </span>
+            </label>
+            <div class="btn-group set-actions">
+              <button class="btn btn-secondary btn-sm" type="button" id="nf-test"><i class="fa-regular fa-paper-plane"></i> Gửi thử</button>
+            </div>
+          </div>
+
+          <div class="set-card">
+            <div class="set-head">
+              <span class="set-ico tone-green"><i class="fa-regular fa-comments"></i></span>
+              <div>
+                <h3>Bản tin nhắc việc theo phòng</h3>
+                <p class="set-note">Trong bảng thông báo, bấm "Sao chép bản tin nhắc việc" để có danh sách việc quá hạn và sắp đến hạn, gom theo từng phòng — dán thẳng vào nhóm Zalo hoặc tin nhắn.</p>
+              </div>
+            </div>
+            <div class="btn-group set-actions">
+              <button class="btn btn-secondary btn-sm" type="button" id="nf-preview"><i class="fa-regular fa-eye"></i> Xem trước bản tin hôm nay</button>
+              <button class="btn btn-secondary btn-sm" type="button" id="nf-copy-digest"><i class="fa-regular fa-copy"></i> Sao chép bản tin</button>
+            </div>
+            <pre class="digest-preview" id="nf-digest" hidden></pre>
+          </div>
+        </section>
+
+        <!-- ===== VIEW: VIỆC CẦN XỬ LÝ ===== -->
+        <section class="view" id="view-mine" aria-label="Việc cần xử lý" hidden>
+          <div class="card toolbar">
+            <div class="toolbar-group">
+              <label class="field-inline">
+                <span class="label">Đơn vị</span>
+                <select class="input" id="mine-dept" aria-label="Đơn vị đang xem việc"></select>
+              </label>
+            </div>
+            <div class="toolbar-group mine-filters">
+              <select class="input" id="mine-source" aria-label="Lọc theo nguồn">
+                <option value="all">Mọi nguồn</option>
+                <option value="noi-bo">Giao việc TTUB</option>
+                <option value="btv">Giao việc BTV</option>
+                <option value="petition">Đơn thư</option>
+                <option value="reflection">Phản ánh 1022</option>
+              </select>
+              <select class="input" id="mine-role" aria-label="Lọc theo vai trò">
+                <option value="all">Mọi vai trò</option>
+                <option value="lead">Phòng xử lý chính</option>
+                <option value="collab">Phòng phối hợp</option>
+              </select>
+              <select class="input" id="mine-due" aria-label="Lọc theo hạn">
+                <option value="all">Mọi hạn</option>
+                <option value="overdue">Quá hạn</option>
+                <option value="soon">Đến hạn trong 7 ngày</option>
+                <option value="later">Sau đó</option>
+              </select>
+              <input class="input" id="mine-q" type="search" placeholder="Tìm theo tên, mã, nội dung…" aria-label="Tìm việc cần xử lý">
+            </div>
+          </div>
+          <div id="mine-body"></div>
+        </section>
+
+        <!-- ===== VIEW: TỰ ĐỘNG HÓA ===== -->
+        <section class="view" id="view-automation" aria-label="Tự động hóa" hidden>
+          <div id="auto-root"></div>
+        </section>
+
+        <!-- ===== VIEW: KIỂM TRA DỮ LIỆU ===== -->
+        <section class="view" id="view-health" aria-label="Kiểm tra dữ liệu" hidden>
+          <div id="health-body"></div>
+        </section>
+
+        <!-- Thùng rác -->
+        <section class="view" id="view-trash" aria-label="Thùng rác" hidden>
+          <div class="set-card">
+            <div class="set-head">
+              <span class="set-ico tone-slate"><i class="fa-regular fa-trash-can"></i></span>
+              <div>
+                <h3>Mục đã xóa</h3>
+                <p class="set-note">Mục xóa sẽ nằm trong thùng rác <b>30 ngày</b> trước khi xóa hẳn. Khôi phục sẽ đưa lại cả liên kết với đơn, phản ánh, công việc và lịch.</p>
+              </div>
+            </div>
+            <div class="list-tools">
+              <label class="search">
+                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                <input class="input" id="tr-search" type="search" placeholder="Tìm trong thùng rác…" aria-label="Tìm trong thùng rác">
+              </label>
+              <select class="input" id="tr-kind" aria-label="Lọc theo loại mục"></select>
+            </div>
+            <p class="set-line" id="tr-summary"></p>
+            <ul class="row-list" id="tr-list"></ul>
+            <div class="empty" id="tr-empty-note" hidden>
+              <i class="fa-regular fa-trash-can"></i>
+              <p>Không có mục nào phù hợp</p>
+              <small>Thử đổi loại mục hoặc từ khóa.</small>
+            </div>
+            <div class="btn-group set-actions">
+              <button class="btn btn-secondary btn-sm" type="button" id="tr-restore-all"><i class="fa-solid fa-rotate-left"></i> Khôi phục tất cả đang hiện</button>
+              <button class="btn btn-danger btn-sm" type="button" id="tr-empty"><i class="fa-solid fa-broom"></i> Dọn toàn bộ thùng rác</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Nhật ký -->
+        <section class="view" id="view-activity" aria-label="Nhật ký thay đổi" hidden>
+          <div class="set-card">
+            <div class="set-head">
+              <span class="set-ico tone-slate"><i class="fa-solid fa-clock-rotate-left"></i></span>
+              <div>
+                <h3>Nhật ký thay đổi</h3>
+                <p class="set-note">500 thay đổi gần nhất: tạo mới, cập nhật (kèm trường đã đổi), chuyển vào thùng rác, khôi phục, gộp dữ liệu. Nhật ký chỉ lưu trên máy này.</p>
+              </div>
+            </div>
+            <div class="list-tools">
+              <label class="search">
+                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                <input class="input" id="al-search" type="search" placeholder="Tìm theo tên công việc, đơn, cán bộ…" aria-label="Tìm trong nhật ký">
+              </label>
+              <select class="input" id="al-kind" aria-label="Lọc theo loại"></select>
+              <select class="input" id="al-action" aria-label="Lọc theo hành động"></select>
+            </div>
+            <div class="list-foot">
+              <span class="set-note" id="al-count"></span>
+              <button class="btn btn-ghost btn-sm" type="button" id="al-export"><i class="fa-solid fa-file-csv"></i> Xuất CSV</button>
+            </div>
+            <ul class="act-list" id="al-list"></ul>
+            <div class="empty" id="al-empty" hidden>
+              <i class="fa-regular fa-clock"></i>
+              <p>Không có thay đổi phù hợp</p>
+              <small>Thử đổi bộ lọc hoặc từ khóa.</small>
+            </div>
+            <div class="btn-group set-actions">
+              <button class="btn btn-secondary btn-sm" type="button" id="al-more" hidden>Xem thêm</button>
+            </div>
+          </div>
+        </section>
+        <section class="view" id="view-overview" aria-label="Dashboard hệ thống" hidden>
+          <div class="ov-kpis">
+            <a class="card kpi ov-kpi tone-amber" href="#btv" data-go="btv" aria-label="Giao việc BTV: mở Giao việc BTV">
+              <div class="kpi-head">
+                <span class="kpi-label">Giao việc BTV</span>
+                <span class="kpi-icon"><i class="fa-solid fa-stamp"></i></span>
+              </div>
+              <div class="ov-donut">
+                <canvas id="ov-c-btv" role="img" aria-label="Giao việc BTV đang mở theo mức hạn"></canvas>
+                <div class="chart-center" id="ov-c-btv-center"></div>
+              </div>
+              <div class="ov-legend" id="ov-c-btv-legend"></div>
+            </a>
+
+            <a class="card kpi ov-kpi tone-blue" href="#tasks" data-go="tasks" aria-label="Giao việc TTUB: mở Giao việc TTUB">
+              <div class="kpi-head">
+                <span class="kpi-label">Giao việc TTUB</span>
+                <span class="kpi-icon"><i class="fa-solid fa-list-check"></i></span>
+              </div>
+              <div class="ov-donut">
+                <canvas id="ov-c-ttub" role="img" aria-label="Giao việc TTUB đang mở theo mức hạn"></canvas>
+                <div class="chart-center" id="ov-c-ttub-center"></div>
+              </div>
+              <div class="ov-legend" id="ov-c-ttub-legend"></div>
+            </a>
+
+            <a class="card kpi ov-kpi tone-slate" href="#petitions" data-go="petitions-open" aria-label="Đơn thư: mở Đơn thư, PAKN">
+              <div class="kpi-head">
+                <span class="kpi-label">Đơn thư</span>
+                <span class="kpi-icon"><i class="fa-solid fa-envelope-open-text"></i></span>
+              </div>
+              <div class="ov-donut">
+                <canvas id="ov-c-petitions" role="img" aria-label="Đơn thư đang mở theo mức hạn"></canvas>
+                <div class="chart-center" id="ov-c-petitions-center"></div>
+              </div>
+              <div class="ov-legend" id="ov-c-petitions-legend"></div>
+            </a>
+
+            <a class="card kpi ov-kpi tone-slate" href="#reflections" data-go="reflections-open" aria-label="Phản ánh: mở Phản ánh 1022">
+              <div class="kpi-head">
+                <span class="kpi-label">Phản ánh</span>
+                <span class="kpi-icon"><i class="fa-solid fa-tower-broadcast"></i></span>
+              </div>
+              <div class="ov-donut">
+                <canvas id="ov-c-reflections" role="img" aria-label="Phản ánh đang mở theo mức hạn"></canvas>
+                <div class="chart-center" id="ov-c-reflections-center"></div>
+              </div>
+              <div class="ov-legend" id="ov-c-reflections-legend"></div>
+            </a>
+
+            <a class="card kpi ov-kpi tone-red" href="#ov-attention" data-go="attention" aria-label="Tổng quá hạn: xem danh sách cần xử lý ngay">
+              <div class="kpi-head">
+                <span class="kpi-label">Tổng quá hạn</span>
+                <span class="kpi-icon"><i class="fa-solid fa-triangle-exclamation"></i></span>
+              </div>
+              <div class="ov-donut">
+                <canvas id="ov-c-overdue" role="img" aria-label="Quá hạn theo nguồn"></canvas>
+                <div class="chart-center" id="ov-c-overdue-center"></div>
+              </div>
+              <div class="ov-legend" id="ov-c-overdue-legend"></div>
+            </a>
+
+            <a class="card kpi ov-kpi tone-green" href="#tasks" data-go="tasks-done" aria-label="Tỷ lệ hoàn thành: mở Giao việc TTUB, lọc Hoàn thành">
+              <div class="kpi-head">
+                <span class="kpi-label">Tỷ lệ hoàn thành</span>
+                <span class="kpi-icon"><i class="fa-solid fa-circle-check"></i></span>
+              </div>
+              <div class="ov-donut">
+                <canvas id="ov-c-rate" role="img" aria-label="Tỷ lệ công việc hoàn thành"></canvas>
+                <div class="chart-center" id="ov-c-rate-center"></div>
+              </div>
+              <div class="ov-legend" id="ov-c-rate-legend"></div>
+            </a>
+          </div>
+
+          <div class="ov-main">
+            <div class="card ov-pad ov-flow-card">
+              <div class="ov-head">
+                <h2 class="card-title">Luồng xử lý</h2>
+              </div>
+              <p class="ov-note">Đơn thư và phản ánh chưa chuyển đơn, tính từ lúc tiếp nhận đến khi giải quyết.</p>
+              <div class="flow" id="ov-flow"></div>
+            </div>
+
+            <div class="card ov-pad">
+              <div class="ov-head">
+                <h2 class="card-title">Cần xử lý ngay</h2>
+                <span class="ov-count" id="ov-attn-count"></span>
+              </div>
+              <ul class="attn-list" id="ov-attention"></ul>
+              <nav class="attn-pager" id="ov-attn-pager" aria-label="Phân trang việc cần xử lý" hidden></nav>
+              <div class="empty" id="ov-attention-empty" hidden>
+                <i class="fa-solid fa-circle-check"></i>
+                <p>Không có mục nào cần xử lý gấp</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="card table-card">
+            <div class="ov-head ov-pad">
+              <h2 class="card-title">Tiến độ theo phòng</h2>
+              <span class="ov-note">Phòng xử lý chính</span>
+            </div>
+            <div class="table-wrap">
+              <table class="table ov-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Phòng</th>
+                    <th scope="col">Việc đang mở</th>
+                    <th scope="col">Quá hạn</th>
+                    <th scope="col">Đang phối hợp</th>
+                    <th scope="col">Đơn đang mở</th>
+                    <th scope="col">Phản ánh đang mở</th>
+                    <th scope="col">Hoàn thành</th>
+                    <th scope="col">Tỷ lệ quá hạn</th>
+                  </tr>
+                </thead>
+                <tbody id="ov-dept-rows"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card ov-pad">
+            <div class="ov-head">
+              <h2 class="card-title">14 ngày tới</h2>
+              <a class="btn btn-secondary" href="#calendar">Mở Lịch công tác</a>
+            </div>
+            <div id="ov-calendar"></div>
+            <div class="empty" id="ov-calendar-empty" hidden>
+              <i class="fa-regular fa-calendar"></i>
+              <p>Không có sự kiện trong 14 ngày tới</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== VIEW: BÁO CÁO ĐỊNH KỲ ===== -->
+        <section class="view" id="view-reports" aria-label="Báo cáo định kỳ" hidden>
+          <div class="card toolbar rp-toolbar">
+            <div class="toolbar-group">
+              <select class="input" id="rp-period" aria-label="Kỳ báo cáo"></select>
+              <div class="date-range" id="rp-range" hidden>
+                <span>Từ</span>
+                <input class="input" type="date" id="rp-from" aria-label="Báo cáo từ ngày">
+                <span>đến</span>
+                <input class="input" type="date" id="rp-to" aria-label="Báo cáo đến ngày">
+              </div>
+            </div>
+            <div class="toolbar-actions">
+              <button class="btn btn-secondary" type="button" id="rp-excel"><i class="fa-solid fa-file-excel"></i> Xuất Excel</button>
+              <button class="btn btn-primary" type="button" id="rp-print"><i class="fa-solid fa-print"></i> In / Lưu PDF</button>
+            </div>
+          </div>
+          <div class="rp-hint">
+            <i class="fa-solid fa-circle-info"></i>
+            <span>Báo cáo tự tổng hợp từ dữ liệu hệ thống. Phần V (nhận xét) sửa trực tiếp được trước khi in — <b id="rp-narrative-state"></b>.</span>
+            <button class="link-btn" type="button" id="rp-reset"><i class="fa-solid fa-rotate"></i> Viết lại tự động</button>
+          </div>
+          <article class="card rp-doc" id="rp-doc" aria-label="Nội dung báo cáo"></article>
+        </section>
+
+        <!-- ===== VIEW: GIAO VIỆC ===== -->
+        <section class="view" id="view-tasks" aria-label="Quản lý giao việc" hidden>
+          <div class="card toolbar">
+            <div class="toolbar-group">
+              <label class="search">
+                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                <input class="input" id="task-search" type="search" placeholder="Tìm công việc…" aria-label="Tìm công việc">
+              </label>
+              <select class="input" id="task-period" aria-label="Lọc theo mốc hạn chót"></select>
+              <div class="date-range" id="task-range">
+                <span>Từ</span>
+                <input class="input" type="date" id="task-from" aria-label="Hạn chót từ ngày">
+                <span>đến</span>
+                <input class="input" type="date" id="task-to" aria-label="Hạn chót đến ngày">
+              </div>
+              <select class="input" id="task-status-filter" aria-label="Lọc theo trạng thái"></select>
+              <div class="saved-filter">
+                <select class="input" id="task-saved" aria-label="Bộ lọc đã lưu"></select>
+                <button class="icon-btn" type="button" id="task-del-filter"aria-label="Xóa bộ lọc đã chọn" title="Xóa bộ lọc đã chọn"><i class="fa-regular fa-trash-can"></i></button>
+              </div>
+            </div>
+            <div class="toolbar-actions">
+              <button class="btn btn-ghost" type="button" id="task-save-filter"title="Lưu bộ lọc hiện tại"><i class="fa-regular fa-bookmark"></i> Lưu bộ lọc</button>
+              <button class="btn btn-ghost" type="button" id="task-view-toggle" aria-pressed="false" title="Chuyển giữa danh sách và bảng theo trạng thái"><i class="fa-solid fa-table-columns"></i> Bảng</button>
+              <button class="btn btn-secondary" type="button" data-import="tasks">
+                <i class="fa-solid fa-file-import"></i> Cập nhật từ Excel
+              </button>
+              <button class="btn btn-primary" id="task-new" type="button">
+                <i class="fa-solid fa-plus"></i> Giao việc mới
+              </button>
+            </div>
+          </div>
+
+          <div class="tasks-top">
+            <div class="card chart-card">
+              <h2 class="card-title">Trạng thái xử lý</h2>
+              <div class="chart-wrap">
+                <canvas id="tk-status" role="img" aria-label="Biểu đồ trạng thái công việc"></canvas>
+                <div class="chart-center" id="tk-status-center"></div>
+              </div>
+              <div class="donut-legend" id="tk-status-legend"></div>
+            </div>
+
+            <div class="kpi-grid-2">
+              <button type="button" class="card kpi kpi-btn tone-slate" data-kpi-filter="all" aria-pressed="true" title="Lọc: tất cả công việc">
+                <div class="kpi-head">
+                  <span class="kpi-label">Tổng nhiệm vụ</span>
+                  <span class="kpi-icon"><i class="fa-solid fa-layer-group"></i></span>
+                </div>
+                <div class="kpi-value" id="kpi-total">0</div>
+              </button>
+              <button type="button" class="card kpi kpi-btn tone-green" data-kpi-filter="Hoàn thành" aria-pressed="false" title="Lọc: đã hoàn thành">
+                <div class="kpi-head">
+                  <span class="kpi-label">Đã hoàn thành</span>
+                  <span class="kpi-icon"><i class="fa-regular fa-circle-check"></i></span>
+                </div>
+                <div class="kpi-value" id="kpi-done">0</div>
+              </button>
+              <button type="button" class="card kpi kpi-btn tone-blue" data-kpi-filter="Sắp đến hạn" aria-pressed="false" title="Lọc: sắp đến hạn">
+                <div class="kpi-head">
+                  <span class="kpi-label">Sắp đến hạn</span>
+                  <span class="kpi-icon"><i class="fa-solid fa-chart-line"></i></span>
+                </div>
+                <div class="kpi-value" id="kpi-doing">0</div>
+              </button>
+              <button type="button" class="card kpi kpi-btn tone-red" data-kpi-filter="Quá hạn" aria-pressed="false" title="Lọc: quá hạn">
+                <div class="kpi-head">
+                  <span class="kpi-label">Quá hạn</span>
+                  <span class="kpi-icon"><i class="fa-solid fa-triangle-exclamation"></i></span>
+                </div>
+                <div class="kpi-value" id="kpi-overdue">0</div>
+              </button>
+            </div>
+          </div>
+
+          <div class="board" id="task-board" hidden></div>
+
+          <div class="card table-card">
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th scope="col" class="col-check"><input type="checkbox" id="task-select-all" aria-label="Chọn tất cả công việc đang hiện"></th>
+                    <th scope="col" class="col-stt">STT</th>
+                    <th scope="col">Công việc</th>
+                    <th scope="col">Phòng xử lý · phối hợp</th>
+                    <th scope="col">Hạn chót</th>
+                    <th scope="col">Ưu tiên</th>
+                    <th scope="col">Trạng thái</th>
+                    <th scope="col" class="t-right">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="task-rows"></tbody>
+              </table>
+            </div>
+            <div class="empty" id="task-empty" hidden>
+              <i class="fa-solid fa-clipboard-list"></i>
+              <p>Không có công việc phù hợp</p>
+              <small>Thử thay đổi bộ lọc hoặc giao việc mới.</small>
+            </div>
+          </div>
+        </section>
+
+        <!-- Thanh thao tác hàng loạt (hiện khi có công việc được chọn) -->
+        <div class="bulk-bar" id="task-bulk" role="region" aria-label="Thao tác với các công việc đã chọn" hidden>
+          <span class="bulk-count"><b id="task-bulk-count">0</b> đã chọn</span>
+          <select class="input" id="task-bulk-status" aria-label="Đổi trạng thái các công việc đã chọn"></select>
+          <select class="input" id="task-bulk-dept" aria-label="Chuyển phòng xử lý các công việc đã chọn"></select>
+          <label class="bulk-date">
+            <span>Đổi hạn</span>
+            <input class="input" type="date" id="task-bulk-deadline" aria-label="Đổi hạn chót các công việc đã chọn">
+          </label>
+          <div class="bulk-actions">
+            <button class="btn btn-secondary btn-sm" type="button" id="task-bulk-export"><i class="fa-solid fa-file-excel"></i> Xuất Excel</button>
+            <button class="btn btn-danger-ghost btn-sm" type="button" id="task-bulk-delete"><i class="fa-regular fa-trash-can"></i> Xóa</button>
+            <button class="btn btn-ghost btn-sm" type="button" id="task-bulk-clear">Bỏ chọn</button>
+          </div>
+        </div>
+
+        <!-- ===== VIEW: LỊCH CÔNG TÁC ===== -->
+        <section class="view" id="view-calendar" aria-label="Lịch công tác" hidden>
+          <div class="card toolbar">
+            <div class="toolbar-group">
+              <div class="cal-nav">
+                <button class="icon-btn bordered" type="button" data-cal="prev" aria-label="Kỳ trước"><i class="fa-solid fa-chevron-left"></i></button>
+                <button class="btn btn-secondary btn-sm" type="button" data-cal="today">Hôm nay</button>
+                <button class="icon-btn bordered" type="button" data-cal="next" aria-label="Kỳ sau"><i class="fa-solid fa-chevron-right"></i></button>
+              </div>
+              <h2 class="cal-title" id="calendar-title"></h2>
+            </div>
+            <div class="toolbar-group">
+              <div class="segmented" role="group" aria-label="Chế độ xem">
+                <button type="button" data-cal-view="month" aria-pressed="true">Tháng</button>
+                <button type="button" data-cal-view="week" aria-pressed="false">Tuần</button>
+              </div>
+              <button class="btn btn-primary" id="event-new" type="button">
+                <i class="fa-solid fa-plus"></i> Tạo lịch
+              </button>
+            </div>
+          </div>
+
+          <div class="card cal-card">
+            <div class="cal-head" aria-hidden="true">
+              <div>T2</div><div>T3</div><div>T4</div><div>T5</div><div>T6</div>
+              <div class="is-weekend">T7</div><div class="is-weekend">CN</div>
+            </div>
+            <div class="cal-grid" id="calendar-grid"></div>
+          </div>
+        </section>
+
+        <!-- ===== VIEW: THƯ VIỆN (nội dung đã lưu từ 4 màn hình) ===== -->
+        <section class="view" id="view-library" aria-label="Thư viện" hidden>
+          <div class="card toolbar">
+            <div class="toolbar-group">
+              <label class="search">
+                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                <input class="input" id="lib-search" type="search" placeholder="Tìm mã, số nghị quyết, tên, nội dung…" aria-label="Tìm trong thư viện">
+              </label>
+              <select class="input" id="lib-section" aria-label="Lọc theo loại nội dung"></select>
+              <select class="input" id="lib-status" aria-label="Lọc theo trạng thái"></select>
+              <select class="input" id="lib-dept" aria-label="Lọc theo phòng xử lý"></select>
+              <select class="input" id="lib-period" aria-label="Lọc theo ngày lưu vào thư viện"></select>
+              <div class="date-range" id="lib-range">
+                <span>Từ</span>
+                <input class="input" type="date" id="lib-from" aria-label="Ngày lưu từ ngày">
+                <span>đến</span>
+                <input class="input" type="date" id="lib-to" aria-label="Ngày lưu đến ngày">
+              </div>
+            </div>
+          </div>
+
+          <div class="card table-card">
+            <p class="set-line" id="lib-summary" style="padding: 12px 16px 0"></p>
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th scope="col" class="col-stt">STT</th>
+                    <th scope="col">Loại · mã</th>
+                    <th scope="col">Nội dung</th>
+                    <th scope="col">Phòng xử lý</th>
+                    <th scope="col">Hạn · trạng thái</th>
+                    <th scope="col">Ngày lưu</th>
+                    <th scope="col" class="t-right">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="lib-rows"></tbody>
+              </table>
+            </div>
+            <div class="empty" id="lib-empty" hidden>
+              <i class="fa-solid fa-box-archive"></i>
+              <p>Thư viện chưa có nội dung phù hợp</p>
+              <small>Bấm biểu tượng hộp lưu trữ ở một mục trong Giao việc BTV, Giao việc TTUB, Đơn thư hoặc Phản ánh 1022.</small>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== VIEW: ĐƠN THƯ, PAKN ===== -->
+        <section class="view" id="view-petitions" aria-label="Đơn thư và PAKN" hidden>
+          <div class="card toolbar">
+            <div class="toolbar-group">
+              <label class="search">
+                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                <input class="input" id="pt-search" type="search" placeholder="Tìm mã đơn, tên, nội dung…" aria-label="Tìm đơn thư">
+              </label>
+              <select class="input" id="pt-period" aria-label="Lọc theo mốc ngày tiếp nhận"></select>
+              <div class="date-range" id="pt-range">
+                <span>Từ</span>
+                <input class="input" type="date" id="pt-from" aria-label="Ngày tiếp nhận từ ngày">
+                <span>đến</span>
+                <input class="input" type="date" id="pt-to" aria-label="Ngày tiếp nhận đến ngày">
+              </div>
+              <select class="input" id="pt-type" aria-label="Lọc theo loại đơn"></select>
+              <select class="input" id="pt-state" aria-label="Lọc theo tình trạng hạn">
+                <option value="all">Mọi tình trạng</option>
+                <option value="done">Đã hoàn thành</option>
+                <option value="soon">Sắp đến hạn</option>
+                <option value="overdue">Quá hạn</option>
+                <option value="closed">Đã đóng</option>
+              </select>
+            </div>
+            <div class="toolbar-actions">
+              <button class="btn btn-secondary" type="button" data-import="petitions">
+                <i class="fa-solid fa-file-import"></i> Cập nhật từ Excel
+              </button>
+              <button class="btn btn-primary" id="pt-new" type="button">
+                <i class="fa-solid fa-plus"></i> Tiếp nhận đơn
+              </button>
+            </div>
+          </div>
+
+          <div class="tasks-top">
+            <div class="card chart-card">
+              <h2 class="card-title">Trạng thái xử lý</h2>
+              <div class="chart-wrap">
+                <canvas id="pt-status" role="img" aria-label="Biểu đồ trạng thái đơn thư"></canvas>
+                <div class="chart-center" id="pt-status-center"></div>
+              </div>
+              <div class="donut-legend" id="pt-status-legend"></div>
+            </div>
+
+          <div class="kpi-grid-2">
+            <button type="button" class="card kpi kpi-btn tone-slate" data-kpi-filter="all" aria-pressed="true" title="Lọc: mọi đơn thư">
+              <div class="kpi-head"><span class="kpi-label">Tổng số đơn</span><span class="kpi-icon"><i class="fa-solid fa-inbox"></i></span></div>
+              <div class="kpi-value" id="pt-total">0</div>
+            </button>
+            <button type="button" class="card kpi kpi-btn tone-green" data-kpi-filter="done" aria-pressed="false" title="Lọc: đã hoàn thành">
+              <div class="kpi-head"><span class="kpi-label">Đã hoàn thành</span><span class="kpi-icon"><i class="fa-solid fa-circle-check"></i></span></div>
+              <div class="kpi-value" id="pt-done">0</div>
+            </button>
+            <button type="button" class="card kpi kpi-btn tone-amber" data-kpi-filter="soon" aria-pressed="false" title="Lọc: sắp đến hạn">
+              <div class="kpi-head"><span class="kpi-label">Sắp đến hạn</span><span class="kpi-icon"><i class="fa-regular fa-hourglass-half"></i></span></div>
+              <div class="kpi-value" id="pt-soon">0</div>
+            </button>
+            <button type="button" class="card kpi kpi-btn tone-red" data-kpi-filter="overdue" aria-pressed="false" title="Lọc: quá hạn">
+              <div class="kpi-head"><span class="kpi-label">Quá hạn</span><span class="kpi-icon"><i class="fa-solid fa-triangle-exclamation"></i></span></div>
+              <div class="kpi-value" id="pt-overdue">0</div>
+            </button>
+          </div>
+          </div>
+
+          <div class="card table-card">
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th scope="col" class="col-stt">STT</th>
+                    <th scope="col">Mã đơn</th>
+                    <th scope="col">Công dân & loại</th>
+                    <th scope="col">Lĩnh vực · phòng</th>
+                    <th scope="col">Hạn xử lý</th>
+                    <th scope="col">Tình trạng</th>
+                    <th scope="col" class="t-right">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="pt-rows"></tbody>
+              </table>
+            </div>
+            <div class="empty" id="pt-empty" hidden>
+              <i class="fa-solid fa-envelope-open"></i>
+              <p>Không có đơn thư phù hợp</p>
+              <small>Thử thay đổi bộ lọc hoặc tiếp nhận đơn mới.</small>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== VIEW: PHẢN ÁNH 1022 ===== -->
+        <section class="view" id="view-reflections" aria-label="Phản ánh 1022" hidden>
+          <div class="card toolbar">
+            <div class="toolbar-group">
+              <label class="search">
+                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                <input class="input" id="pa-search" type="search" placeholder="Tìm mã, khu vực, nội dung…" aria-label="Tìm phản ánh">
+              </label>
+              <select class="input" id="pa-period" aria-label="Lọc theo mốc ngày tiếp nhận"></select>
+              <div class="date-range" id="pa-range">
+                <span>Từ</span>
+                <input class="input" type="date" id="pa-from" aria-label="Ngày tiếp nhận từ ngày">
+                <span>đến</span>
+                <input class="input" type="date" id="pa-to" aria-label="Ngày tiếp nhận đến ngày">
+              </div>
+              <select class="input" id="pa-area" aria-label="Lọc theo khu vực"></select>
+              <select class="input" id="pa-state" aria-label="Lọc theo tình trạng">
+                <option value="all">Mọi tình trạng</option>
+                <option value="Chưa thực hiện">Chưa thực hiện</option>
+                <option value="Sắp đến hạn">Sắp đến hạn</option>
+                <option value="Quá hạn">Quá hạn</option>
+                <option value="Hoàn thành">Hoàn thành</option>
+              </select>
+            </div>
+            <div class="toolbar-actions">
+              <button class="btn btn-secondary" type="button" data-import="reflections">
+                <i class="fa-solid fa-file-import"></i> Cập nhật từ Excel
+              </button>
+              <button class="btn btn-primary" id="pa-new" type="button">
+                <i class="fa-solid fa-plus"></i> Tiếp nhận phản ánh
+              </button>
+            </div>
+          </div>
+
+          <div class="tasks-top">
+            <div class="stack-col">
+            <div class="card chart-card">
+              <h2 class="card-title">Trạng thái xử lý</h2>
+              <div class="chart-wrap">
+                <canvas id="pa-status" role="img" aria-label="Biểu đồ trạng thái phản ánh"></canvas>
+                <div class="chart-center" id="pa-status-center"></div>
+              </div>
+              <div class="donut-legend" id="pa-status-legend"></div>
+            </div>
+            </div>
+            <div class="kpi-grid-2">
+              <button type="button" class="card kpi kpi-btn tone-slate" data-kpi-filter="all" aria-pressed="true" title="Lọc: mọi phản ánh">
+                <div class="kpi-head"><span class="kpi-label">Tổng phản ánh</span><span class="kpi-icon"><i class="fa-solid fa-tower-broadcast"></i></span></div>
+                <div class="kpi-value" id="pa-total">0</div>
+              </button>
+              <button type="button" class="card kpi kpi-btn tone-green" data-kpi-filter="Hoàn thành" aria-pressed="false" title="Lọc: đã hoàn thành">
+                <div class="kpi-head"><span class="kpi-label">Hoàn thành</span><span class="kpi-icon"><i class="fa-solid fa-circle-check"></i></span></div>
+                <div class="kpi-value" id="pa-done">0</div>
+              </button>
+              <button type="button" class="card kpi kpi-btn tone-amber" data-kpi-filter="Sắp đến hạn" aria-pressed="false" title="Lọc: sắp đến hạn">
+                <div class="kpi-head"><span class="kpi-label">Sắp đến hạn</span><span class="kpi-icon"><i class="fa-solid fa-spinner"></i></span></div>
+                <div class="kpi-value" id="pa-doing">0</div>
+              </button>
+              <button type="button" class="card kpi kpi-btn tone-red" data-kpi-filter="overdue" aria-pressed="false" title="Lọc: quá hạn">
+                <div class="kpi-head"><span class="kpi-label">Quá hạn</span><span class="kpi-icon"><i class="fa-solid fa-triangle-exclamation"></i></span></div>
+                <div class="kpi-value" id="pa-overdue">0</div>
+              </button>
+            </div>
+          </div>
+
+          <div class="card table-card">
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th scope="col" class="col-stt">STT</th>
+                    <th scope="col">Mã</th>
+                    <th scope="col">Nội dung phản ánh</th>
+                    <th scope="col">Khu vực</th>
+                    <th scope="col">Lĩnh vực</th>
+                    <th scope="col">Hạn</th>
+                    <th scope="col">Tình trạng</th>
+                    <th scope="col" class="t-right">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="pa-rows"></tbody>
+              </table>
+            </div>
+            <div class="empty" id="pa-empty" hidden>
+              <i class="fa-solid fa-tower-broadcast"></i>
+              <p>Chưa có phản ánh phù hợp</p>
+              <small>Tiếp nhận phản ánh mới hoặc đổi bộ lọc.</small>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== VIEW: GIAO VIỆC BTV ===== -->
+        <section class="view" id="view-btv" aria-label="Giao việc Ban Thường vụ" hidden>
+          <div class="card toolbar">
+            <div class="toolbar-group">
+              <label class="search">
+                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                <input class="input" id="bt-search" type="search" placeholder="Tìm số nghị quyết, nội dung…" aria-label="Tìm giao việc BTV">
+              </label>
+              <select class="input" id="bt-period" aria-label="Lọc theo mốc ngày ban hành"></select>
+              <div class="date-range" id="bt-range">
+                <span>Từ</span>
+                <input class="input" type="date" id="bt-from" aria-label="Ngày ban hành từ ngày">
+                <span>đến</span>
+                <input class="input" type="date" id="bt-to" aria-label="Ngày ban hành đến ngày">
+              </div>
+              <select class="input" id="bt-state" aria-label="Lọc theo tình trạng báo cáo">
+                <option value="all">Mọi tình trạng báo cáo</option>
+                <option value="doing">Chưa hoàn thành</option>
+                <option value="wait">Chờ báo cáo</option>
+                <option value="late">Quá hạn báo cáo</option>
+                <option value="done">Đã báo cáo</option>
+              </select>
+            </div>
+            <div class="toolbar-actions">
+              <button class="btn btn-secondary" type="button" data-import="btv">
+                <i class="fa-solid fa-file-import"></i> Cập nhật từ Excel
+              </button>
+              <button class="btn btn-primary" id="bt-new" type="button">
+                <i class="fa-solid fa-stamp"></i> Giao việc BTV
+              </button>
+            </div>
+          </div>
+
+          <div class="tasks-top">
+            <div class="card chart-card">
+              <h2 class="card-title">Trạng thái xử lý</h2>
+              <div class="chart-wrap">
+                <canvas id="bt-status" role="img" aria-label="Biểu đồ trạng thái giao việc BTV"></canvas>
+                <div class="chart-center" id="bt-status-center"></div>
+              </div>
+              <div class="donut-legend" id="bt-status-legend"></div>
+            </div>
+
+          <div class="kpi-grid-2">
+            <button type="button" class="card kpi kpi-btn tone-blue" data-bt-state="all" aria-pressed="false" title="Lọc: tất cả nhiệm vụ">
+              <div class="kpi-head"><span class="kpi-label">Tổng nhiệm vụ</span><span class="kpi-icon"><i class="fa-solid fa-spinner"></i></span></div>
+              <div class="kpi-value" id="bt-doing">0</div>
+            </button>
+            <button type="button" class="card kpi kpi-btn tone-amber" data-bt-state="wait" aria-pressed="false" title="Lọc: chờ báo cáo">
+              <div class="kpi-head"><span class="kpi-label">Chờ báo cáo</span><span class="kpi-icon"><i class="fa-regular fa-hourglass-half"></i></span></div>
+              <div class="kpi-value" id="bt-wait">0</div>
+            </button>
+            <button type="button" class="card kpi kpi-btn tone-red" data-bt-state="late" aria-pressed="false" title="Lọc: quá hạn báo cáo">
+              <div class="kpi-head"><span class="kpi-label">Quá hạn báo cáo</span><span class="kpi-icon"><i class="fa-solid fa-triangle-exclamation"></i></span></div>
+              <div class="kpi-value" id="bt-late">0</div>
+            </button>
+            <button type="button" class="card kpi kpi-btn tone-green" data-bt-state="done" aria-pressed="false" title="Lọc: đã báo cáo">
+              <div class="kpi-head"><span class="kpi-label">Đã báo cáo</span><span class="kpi-icon"><i class="fa-regular fa-circle-check"></i></span></div>
+              <div class="kpi-value" id="bt-done">0</div>
+            </button>
+          </div>
+          </div>
+
+          <div class="card table-card">
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th scope="col" class="col-stt">STT</th>
+                    <th scope="col">Nghị quyết / thông báo</th>
+                    <th scope="col">Nội dung giao việc</th>
+                    <th scope="col">Phòng xử lý · phối hợp</th>
+                    <th scope="col">Hạn hoàn thành</th>
+                    <th scope="col">Trạng thái</th>
+                    <th scope="col" class="t-right">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="bt-rows"></tbody>
+              </table>
+            </div>
+            <div class="empty" id="bt-empty" hidden>
+              <i class="fa-solid fa-stamp"></i>
+              <p>Chưa có giao việc BTV nào</p>
+              <small>Nhấn “Giao việc BTV” để ghi nhận nghị quyết mới.</small>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== VIEW: PHÒNG BAN ===== -->
+        <section class="view" id="view-departments" aria-label="Quản lý phòng ban" hidden>
+          <div class="card toolbar">
+            <div class="toolbar-group">
+              <label class="search">
+                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                <input class="input" id="dept-search" type="search" placeholder="Tìm tên phòng ban…" aria-label="Tìm phòng ban">
+              </label>
+            </div>
+            <button class="btn btn-primary" id="dept-new" type="button">
+              <i class="fa-solid fa-plus"></i> Thêm phòng ban
+            </button>
+          </div>
+
+          <div class="kpi-grid-2">
+            <div class="card kpi tone-blue">
+              <div class="kpi-head">
+                <span class="kpi-label">Số phòng ban</span>
+                <span class="kpi-icon"><i class="fa-solid fa-sitemap"></i></span>
+              </div>
+              <div class="kpi-value" id="dk-total">0</div>
+            </div>
+            <div class="card kpi tone-amber">
+              <div class="kpi-head">
+                <span class="kpi-label">Cán bộ chưa phân phòng</span>
+                <span class="kpi-icon"><i class="fa-solid fa-user-clock"></i></span>
+              </div>
+              <div class="kpi-value" id="dk-unassigned">0</div>
+            </div>
+          </div>
+
+          <div class="card table-card">
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th scope="col">Tên phòng ban</th>
+                    <th scope="col">Cán bộ</th>
+                    <th scope="col">Công việc</th>
+                    <th scope="col" class="t-right">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="dept-rows"></tbody>
+              </table>
+            </div>
+            <div class="empty" id="dept-empty" hidden>
+              <i class="fa-solid fa-sitemap"></i>
+              <p>Chưa có phòng ban nào</p>
+              <small>Nhấn “Thêm phòng ban” để tạo phòng ban mới.</small>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== VIEW: NHÂN SỰ ===== -->
+        <section class="view" id="view-personnel" aria-label="Quản lý nhân sự" hidden>
+          <div class="card toolbar">
+            <div class="toolbar-group">
+              <label class="search">
+                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                <input class="input" id="person-search" type="search" placeholder="Tìm tên hoặc số điện thoại…" aria-label="Tìm nhân sự">
+              </label>
+              <select class="input" id="person-dept-filter" aria-label="Lọc theo phòng ban"></select>
+            </div>
+            <button class="btn btn-primary" id="person-new" type="button">
+              <i class="fa-solid fa-user-plus"></i> Thêm cán bộ
+            </button>
+          </div>
+
+          <div class="kpi-grid-2">
+            <div class="card kpi tone-slate">
+              <div class="kpi-head">
+                <span class="kpi-label">Tổng nhân sự</span>
+                <span class="kpi-icon"><i class="fa-solid fa-users"></i></span>
+              </div>
+              <div class="kpi-value" id="pk-total">0</div>
+            </div>
+            <div class="card kpi tone-amber">
+              <div class="kpi-head">
+                <span class="kpi-label">Phòng đang có việc</span>
+                <span class="kpi-icon"><i class="fa-solid fa-briefcase"></i></span>
+              </div>
+              <div class="kpi-value" id="pk-busy">0</div>
+            </div>
+          </div>
+
+          <div class="card table-card">
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th scope="col">Họ tên & chức vụ</th>
+                    <th scope="col">Phòng ban</th>
+                    <th scope="col">Liên hệ</th>
+                    <th scope="col" class="t-right">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="person-rows"></tbody>
+              </table>
+            </div>
+            <div class="empty" id="person-empty" hidden>
+              <i class="fa-solid fa-users-slash"></i>
+              <p>Không tìm thấy cán bộ nào</p>
+              <small>Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm.</small>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <div id="toasts" aria-live="polite"></div>
+
+  <!-- ================= MODAL: FORM GIAO VIỆC ================= -->
+  <div class="modal" id="task-modal" hidden>
+    <div class="modal-panel wide" role="dialog" aria-modal="true" aria-labelledby="task-modal-title">
+      <header class="modal-head">
+        <h2 class="modal-title">
+          <span class="title-icon"><i class="fa-solid fa-suitcase"></i></span>
+          <span id="task-modal-title">Giao việc mới</span>
+        </h2>
+        <button class="icon-btn" type="button" data-close="task-modal" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+      </header>
+      <form class="modal-body" id="task-form" autocomplete="off">
+        <div class="form-grid">
+          <div class="field full">
+            <label class="label" for="task-name">Tên công việc <span class="req">*</span></label>
+            <input class="input" id="task-name" required maxlength="160">
+          </div>
+          <div class="field">
+            <label class="label" for="task-dept">Phòng xử lý chính <span class="req">*</span></label>
+            <select class="input" id="task-dept" required></select>
+          </div>
+          <div class="field">
+            <label class="label" for="task-deadline">Hạn chót <span class="req">*</span></label>
+            <input class="input" type="date" id="task-deadline" required>
+          </div>
+          <div class="field full">
+            <span class="label">Phòng phối hợp</span>
+            <div class="check-list" id="task-collab-list"></div>
+          </div>
+          <div class="field">
+            <label class="label" for="task-assigner">Người giao</label>
+            <select class="input" id="task-assigner"></select>
+          </div>
+          <div class="field">
+            <label class="label" for="task-priority">Mức độ ưu tiên</label>
+            <select class="input" id="task-priority"></select>
+          </div>
+          <div class="field">
+            <label class="label" for="task-status">Trạng thái</label>
+            <select class="input" id="task-status"></select>
+          </div>
+          <div class="field full">
+            <label class="label" for="task-desc">Nội dung chi tiết</label>
+            <textarea class="input" id="task-desc" rows="3"></textarea>
+          </div>
+        </div>
+
+        <div class="section-gap">
+          <div class="row-between">
+            <span class="label"><i class="fa-solid fa-paperclip"></i> Tài liệu đính kèm</span>
+            <span class="chip" id="task-file-count">0 tệp</span>
+          </div>
+          <div class="dropzone" id="task-dropzone" role="button" tabindex="0">
+            <i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i>
+            <strong>Nhấn để chọn hoặc kéo thả tệp vào đây</strong>
+            <small>PDF, Word, Excel, PowerPoint, hình ảnh</small>
+          </div>
+          <input type="file" id="task-file-input" multiple hidden>
+          <div class="file-list" id="task-file-list"></div>
+        </div>
+
+        <label class="sync-toggle">
+          <input type="checkbox" id="task-sync" checked>
+          <span>
+            <strong>Đồng bộ hạn chót vào Lịch công tác</strong>
+            <small>Tự tạo sự kiện 17:00 vào ngày hạn chót và cập nhật khi công việc thay đổi</small>
+          </span>
+        </label>
+      </form>
+      <footer class="modal-foot">
+        <button class="btn btn-secondary" type="button" data-close="task-modal">Hủy</button>
+        <button class="btn btn-primary" type="submit" form="task-form" id="task-submit"></button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: CHI TIẾT CÔNG VIỆC ================= -->
+  <div class="modal" id="task-detail-modal" hidden>
+    <div class="modal-panel xwide detail" role="dialog" aria-modal="true" aria-labelledby="detail-task-title">
+      <header class="modal-head">
+        <h2 class="modal-title">
+          <span class="title-icon"><i class="fa-solid fa-list-check"></i></span>
+          Chi tiết công việc
+        </h2>
+        <div class="head-actions">
+          <select class="input status-select" id="detail-status" aria-label="Cập nhật trạng thái"></select>
+          <button class="icon-btn" type="button" data-close="task-detail-modal" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+      </header>
+
+      <div class="detail-layout">
+        <aside class="detail-info">
+          <div class="detail-scroll">
+            <div>
+              <h3 class="detail-title" id="detail-task-title"></h3>
+              <div class="detail-meta">
+                <span id="detail-priority"></span>
+                <span><i class="fa-regular fa-clock"></i> Hạn: <b id="detail-deadline"></b></span>
+              </div>
+            </div>
+
+            <div class="people-card">
+              <div class="person-line">
+                <span class="mini-ico"><i class="fa-solid fa-sitemap"></i></span>
+                <div><small>Phòng xử lý chính</small><b id="detail-lead"></b></div>
+              </div>
+              <div class="person-line" id="detail-collab-row">
+                <span class="mini-ico"><i class="fa-solid fa-users"></i></span>
+                <div><small>Phòng phối hợp</small><b id="detail-collab"></b></div>
+              </div>
+            </div>
+
+            <div>
+              <h4 class="eyebrow">Nội dung chi tiết</h4>
+              <p class="pre" id="detail-desc"></p>
+            </div>
+
+            <div class="checklist-block">
+              <div class="row-between">
+                <h4 class="eyebrow">Đầu việc con <span class="ov-note" id="detail-sub-count"></span></h4>
+              </div>
+              <ul class="sub-list" id="detail-checklist"></ul>
+              <div class="sub-add">
+                <input class="input" id="detail-sub-input" placeholder="Thêm đầu việc…" maxlength="160" aria-label="Thêm đầu việc con">
+                <button class="btn btn-ghost btn-sm" type="button" id="detail-sub-add"><i class="fa-solid fa-plus"></i> Thêm</button>
+              </div>
+              <div class="hint-box" id="detail-hint" hidden>
+                <span><i class="fa-solid fa-circle-check"></i> Tất cả đầu việc đã xong.</span>
+                <button class="btn btn-secondary btn-sm" type="button" id="detail-hint-btn"></button>
+              </div>
+            </div>
+
+            <div class="notes-block">
+              <div class="row-between">
+                <h4 class="eyebrow">Ghi chú <span class="ov-note" id="detail-note-count"></span></h4>
+              </div>
+              <ul class="note-list" id="detail-notes"></ul>
+              <div class="note-add">
+                <textarea class="input" id="detail-note-input" rows="2" maxlength="1000" placeholder="Ghi chú… nhắc người khác bằng @họ tên đầy đủ" aria-label="Nội dung ghi chú"></textarea>
+                <button class="btn btn-ghost btn-sm" type="button" id="detail-note-add"><i class="fa-solid fa-paper-plane"></i> Gửi ghi chú</button>
+              </div>
+            </div>
+
+            <div>
+              <div class="row-between">
+                <h4 class="eyebrow">Tài liệu (<span id="detail-file-count">0</span>)</h4>
+                <button class="btn btn-ghost btn-sm" type="button" id="detail-add-file"><i class="fa-solid fa-plus"></i> Thêm tệp</button>
+              </div>
+              <input type="file" id="detail-file-input" multiple hidden>
+              <div class="file-list" id="detail-file-list"></div>
+            </div>
+          </div>
+          <footer class="detail-foot">
+            <button class="btn btn-primary btn-sm" type="button" id="detail-approve" hidden><i class="fa-solid fa-user-check"></i> Duyệt và hoàn thành</button>
+            <button class="btn btn-secondary btn-sm" type="button" id="detail-edit"><i class="fa-solid fa-pen-to-square"></i> Chỉnh sửa công việc</button>
+          </footer>
+        </aside>
+
+        <section class="detail-preview" aria-label="Xem trước tài liệu">
+          <div class="preview-head" id="preview-head" hidden>
+            <span id="preview-name"></span>
+            <button class="icon-btn" type="button" id="preview-close" aria-label="Đóng xem trước"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          <div class="preview-stage">
+            <div id="preview-empty"></div>
+            <img id="preview-img" alt="" hidden>
+            <iframe id="preview-frame" title="Xem trước tài liệu" hidden></iframe>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: FORM LỊCH CÔNG TÁC ================= -->
+  <div class="modal" id="event-modal" hidden>
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="event-modal-title">
+      <header class="modal-head">
+        <h2 class="modal-title">
+          <span class="title-icon"><i class="fa-regular fa-calendar-days"></i></span>
+          <span id="event-modal-title">Thêm lịch công tác</span>
+        </h2>
+        <button class="icon-btn" type="button" data-close="event-modal" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+      </header>
+      <form class="modal-body" id="event-form" autocomplete="off">
+        <div class="form-grid">
+          <div class="field full">
+            <label class="label" for="event-title">Tiêu đề / nội dung <span class="req">*</span></label>
+            <input class="input" id="event-title" required maxlength="160">
+          </div>
+          <div class="field">
+            <label class="label" for="event-start">Bắt đầu <span class="req">*</span></label>
+            <input class="input" type="datetime-local" id="event-start" required>
+          </div>
+          <div class="field">
+            <label class="label" for="event-end">Kết thúc <span class="req">*</span></label>
+            <input class="input" type="datetime-local" id="event-end" required>
+          </div>
+          <div class="field full">
+            <label class="label" for="event-location">Địa điểm</label>
+            <input class="input" id="event-location" list="location-options" placeholder="Chọn hoặc nhập địa điểm…">
+            <datalist id="location-options">
+              <option value="Phòng họp số 1"></option>
+              <option value="Hội trường UBND Xã"></option>
+              <option value="Phòng Kinh tế"></option>
+            </datalist>
+          </div>
+          <fieldset class="field full">
+            <legend class="label">Thành phần tham dự</legend>
+            <div class="check-list" id="event-attendees"></div>
+          </fieldset>
+          <div class="field full">
+            <label class="label" for="event-desc">Ghi chú</label>
+            <textarea class="input" id="event-desc" rows="3"></textarea>
+          </div>
+        </div>
+      </form>
+      <footer class="modal-foot">
+        <button class="btn btn-secondary" type="button" data-close="event-modal">Hủy</button>
+        <button class="btn btn-primary" type="submit" form="event-form" id="event-submit">Lưu lịch</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: CHI TIẾT SỰ KIỆN ================= -->
+  <div class="modal" id="event-detail-modal" hidden>
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="event-detail-title">
+      <header class="modal-head">
+        <h2 class="modal-title" id="event-detail-title">Chi tiết lịch công tác</h2>
+        <button class="icon-btn" type="button" data-close="event-detail-modal" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+      </header>
+      <div class="modal-body">
+        <span class="badge" id="event-detail-type"></span>
+        <h3 class="detail-title" id="event-detail-name" style="margin-top:12px"></h3>
+        <div class="info-grid">
+          <div><small>Bắt đầu</small><b id="event-detail-start"></b></div>
+          <div><small>Kết thúc</small><b id="event-detail-end"></b></div>
+          <div class="full"><small>Địa điểm</small><b id="event-detail-location"></b></div>
+        </div>
+        <div class="section-gap">
+          <h4 class="eyebrow">Thành phần tham dự</h4>
+          <div class="chips" id="event-detail-attendees"></div>
+        </div>
+        <div class="section-gap">
+          <h4 class="eyebrow">Ghi chú</h4>
+          <p class="pre" id="event-detail-desc"></p>
+        </div>
+      </div>
+      <footer class="modal-foot split" id="event-detail-actions"></footer>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: FORM CÁN BỘ ================= -->
+  <div class="modal" id="person-modal" hidden>
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="person-modal-title">
+      <header class="modal-head">
+        <h2 class="modal-title">
+          <span class="title-icon"><i class="fa-solid fa-user-plus"></i></span>
+          <span id="person-modal-title">Thêm cán bộ mới</span>
+        </h2>
+        <button class="icon-btn" type="button" data-close="person-modal" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+      </header>
+      <form class="modal-body" id="person-form" autocomplete="off">
+        <div class="form-grid">
+          <div class="field">
+            <label class="label" for="person-name">Họ tên <span class="req">*</span></label>
+            <input class="input" id="person-name" required maxlength="80">
+          </div>
+          <div class="field">
+            <label class="label" for="person-phone">Số điện thoại</label>
+            <input class="input" type="tel" id="person-phone" pattern="[0-9+ ]{8,15}" placeholder="VD: 0912345678">
+          </div>
+          <div class="field">
+            <label class="label" for="person-title">Chức vụ</label>
+            <input class="input" id="person-title" list="title-options" maxlength="80" placeholder="Nhập hoặc chọn chức vụ…" autocomplete="off">
+            <datalist id="title-options"></datalist>
+          </div>
+          <div class="field">
+            <label class="label" for="person-dept">Phòng ban</label>
+            <select class="input" id="person-dept"></select>
+          </div>
+        </div>
+      </form>
+      <footer class="modal-foot">
+        <button class="btn btn-secondary" type="button" data-close="person-modal">Hủy</button>
+        <button class="btn btn-primary" type="submit" form="person-form" id="person-submit">Lưu</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: HỒ SƠ CÁN BỘ ================= -->
+  <div class="modal" id="person-detail-modal" hidden>
+    <div class="modal-panel wide" role="dialog" aria-modal="true" aria-labelledby="pd-name">
+      <div class="profile-banner">
+        <button class="icon-btn banner-close" type="button" data-close="person-detail-modal" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body profile-body">
+        <div class="profile-grid">
+          <div class="profile-side">
+            <div id="pd-avatar"></div>
+            <h2 class="profile-name" id="pd-name"></h2>
+            <p class="profile-title" id="pd-title"></p>
+            <span class="chip" id="pd-dept"></span>
+            <div class="people-card">
+              <div class="person-line">
+                <span class="mini-ico"><i class="fa-solid fa-phone"></i></span>
+                <div><small>Số điện thoại</small><b id="pd-phone"></b></div>
+              </div>
+            </div>
+          </div>
+          <div class="profile-main">
+            <div class="row-between">
+              <h4 class="eyebrow">Công việc của phòng</h4>
+              <span class="chip" id="pd-task-count"></span>
+            </div>
+            <div class="stack-list" id="pd-tasks"></div>
+
+            <div class="row-between section-gap">
+              <h4 class="eyebrow">Lịch công tác sắp tới</h4>
+              <span class="chip" id="pd-event-count"></span>
+            </div>
+            <div class="stack-list" id="pd-events"></div>
+          </div>
+        </div>
+      </div>
+      <footer class="modal-foot split">
+        <button class="btn btn-secondary" type="button" id="pd-edit"><i class="fa-solid fa-pen-to-square"></i> Chỉnh sửa</button>
+        <button class="btn btn-primary" type="button" data-close="person-detail-modal">Đóng</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: TIẾP NHẬN ĐƠN THƯ ================= -->
+  <div class="modal" id="petition-modal" hidden>
+    <div class="modal-panel wide" role="dialog" aria-modal="true" aria-labelledby="pt-modal-title">
+      <header class="modal-head">
+        <h2 class="modal-title">
+          <span class="title-icon"><i class="fa-solid fa-envelope-open-text"></i></span>
+          <span id="pt-modal-title">Tiếp nhận đơn thư</span>
+        </h2>
+        <button class="icon-btn" type="button" data-close="petition-modal" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+      </header>
+      <form class="modal-body" id="pt-form" autocomplete="off">
+        <div class="form-grid">
+          <div class="field">
+            <label class="label" for="pt-f-type">Loại đơn <span class="req">*</span></label>
+            <select class="input" id="pt-f-type" required></select>
+          </div>
+          <div class="field">
+            <label class="label" for="pt-f-received">Ngày tiếp nhận <span class="req">*</span></label>
+            <input class="input" type="date" id="pt-f-received" required>
+          </div>
+          <div class="field">
+            <label class="label" for="pt-f-channel">Hình thức tiếp nhận</label>
+            <select class="input" id="pt-f-channel"></select>
+          </div>
+          <div class="field">
+            <label class="label" for="pt-f-deadline">Hạn xử lý <span class="req">*</span></label>
+            <input class="input" type="date" id="pt-f-deadline" required>
+          </div>
+          <div class="field">
+            <label class="label" for="pt-f-name">Họ tên công dân <span class="req">*</span></label>
+            <input class="input" id="pt-f-name" required maxlength="80">
+          </div>
+          <div class="field">
+            <label class="label" for="pt-f-phone">Số điện thoại</label>
+            <input class="input" type="tel" id="pt-f-phone" placeholder="VD: 0912345678">
+          </div>
+          <div class="field full">
+            <label class="label" for="pt-f-address">Địa chỉ</label>
+            <input class="input" id="pt-f-address" maxlength="160">
+          </div>
+          <div class="field full">
+            <label class="label" for="pt-f-content">Nội dung đơn <span class="req">*</span></label>
+            <textarea class="input" id="pt-f-content" rows="4" required></textarea>
+            <div class="suggest" id="pt-suggest" hidden></div>
+            <div class="dupes" id="pt-dupes" hidden></div>
+          </div>
+          <div class="field">
+            <label class="label" for="pt-f-field">Lĩnh vực</label>
+            <select class="input" id="pt-f-field"></select>
+          </div>
+          <div class="field">
+            <label class="label" for="pt-f-dept">Phòng xử lý chính</label>
+            <select class="input" id="pt-f-dept"></select>
+          </div>
+          <div class="field full">
+            <span class="label">Phòng phối hợp</span>
+            <div class="check-list" id="pt-f-collab-list"></div>
+            <div class="collab-hint" id="pt-f-hint" hidden></div>
+          </div>
+          <div class="field full">
+            <label class="label" for="pt-f-result">Kết quả / tiến độ xử lý</label>
+            <textarea class="input" id="pt-f-result" rows="2" placeholder="VD: Công văn số 123/UBND-KT ngày 10/10/2026"></textarea>
+          </div>
+          <div class="field" id="pt-f-status-wrap" hidden>
+            <label class="label" for="pt-f-status">Tình trạng</label>
+            <select class="input" id="pt-f-status"></select>
+          </div>
+        </div>
+        <label class="sync-toggle">
+          <input type="checkbox" id="pt-sync" checked>
+          <span>
+            <strong>Đồng bộ hạn xử lý vào Lịch công tác</strong>
+            <small>Tự tạo sự kiện 17:00 vào ngày hạn xử lý và cập nhật khi đơn thay đổi</small>
+          </span>
+        </label>
+      </form>
+      <footer class="modal-foot">
+        <button class="btn btn-secondary" type="button" data-close="petition-modal">Hủy</button>
+        <button class="btn btn-primary" type="submit" form="pt-form" id="pt-submit">Tiếp nhận đơn</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: CHI TIẾT ĐƠN THƯ ================= -->
+  <div class="modal" id="petition-detail-modal" hidden>
+    <div class="modal-panel xwide detail" role="dialog" aria-modal="true" aria-labelledby="ptd-code">
+      <header class="modal-head">
+        <h2 class="modal-title">
+          <span class="title-icon"><i class="fa-solid fa-envelope-open-text"></i></span>
+          <span id="ptd-code"></span>
+        </h2>
+        <div class="head-actions">
+          <select class="input status-select" id="ptd-status" aria-label="Cập nhật tình trạng"></select>
+          <button class="icon-btn" type="button" data-close="petition-detail-modal" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+      </header>
+      <div class="detail-layout">
+        <aside class="detail-info">
+          <div class="detail-scroll">
+            <div>
+              <div id="ptd-type"></div>
+              <h3 class="detail-title" id="ptd-name"></h3>
+              <div class="detail-meta" id="ptd-meta"></div>
+            </div>
+            <div class="people-card" id="ptd-people"></div>
+            <div>
+              <h4 class="eyebrow">Nội dung</h4>
+              <p class="pre" id="ptd-content"></p>
+            </div>
+            <div id="ptd-result-wrap" hidden>
+              <h4 class="eyebrow">Kết quả / tiến độ xử lý</h4>
+              <p class="pre" id="ptd-result"></p>
+            </div>
+            <div>
+              <h4 class="eyebrow">Công việc liên kết</h4>
+              <div class="stack-list" id="ptd-tasks"></div>
+            </div>
+          </div>
+          <footer class="detail-foot" id="ptd-actions"></footer>
+        </aside>
+        <section class="detail-preview">
+          <div class="timeline-wrap">
+            <h4 class="eyebrow">Nhật ký xử lý</h4>
+            <ol class="timeline" id="ptd-timeline"></ol>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: TIẾP NHẬN PHẢN ÁNH 1022 ================= -->
+  <div class="modal" id="reflection-modal" hidden>
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="pa-modal-title">
+      <header class="modal-head">
+        <h2 class="modal-title">
+          <span class="title-icon"><i class="fa-solid fa-tower-broadcast"></i></span>
+          <span id="pa-modal-title">Tiếp nhận phản ánh 1022</span>
+        </h2>
+        <button class="icon-btn" type="button" data-close="reflection-modal" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+      </header>
+      <form class="modal-body" id="pa-form" autocomplete="off">
+        <div class="form-grid">
+          <div class="field">
+            <label class="label" for="pa-f-received">Ngày tiếp nhận <span class="req">*</span></label>
+            <input class="input" type="date" id="pa-f-received" required>
+          </div>
+          <div class="field">
+            <label class="label" for="pa-f-area">Khu vực <span class="req">*</span></label>
+            <input class="input" id="pa-f-area" list="area-options" required maxlength="60" placeholder="Chọn hoặc nhập khu vực…">
+            <datalist id="area-options"></datalist>
+          </div>
+          <div class="field">
+            <label class="label" for="pa-f-name">Người phản ánh</label>
+            <input class="input" id="pa-f-name" maxlength="80" placeholder="Có thể để trống (ẩn danh)">
+          </div>
+          <div class="field">
+            <label class="label" for="pa-f-phone">Số điện thoại</label>
+            <input class="input" type="tel" id="pa-f-phone" placeholder="Có thể để trống">
+          </div>
+          <div class="field full">
+            <label class="label" for="pa-f-content">Nội dung phản ánh <span class="req">*</span></label>
+            <textarea class="input" id="pa-f-content" rows="3" required></textarea>
+            <div class="suggest" id="pa-suggest" hidden></div>
+          </div>
+          <div class="field">
+            <label class="label" for="pa-f-field">Lĩnh vực</label>
+            <select class="input" id="pa-f-field"></select>
+          </div>
+          <div class="field">
+            <label class="label" for="pa-f-dept">Phòng xử lý chính</label>
+            <select class="input" id="pa-f-dept"></select>
+          </div>
+          <div class="field full">
+            <span class="label">Phòng phối hợp</span>
+            <div class="check-list" id="pa-f-collab-list"></div>
+          </div>
+          <div class="field full">
+            <label class="label" for="pa-f-result">Kết quả xử lý</label>
+            <textarea class="input" id="pa-f-result" rows="2" placeholder="VD: Công văn số 123/UBND-HT ngày 10/10/2026"></textarea>
+          </div>
+          <div class="field" id="pa-f-status-wrap" hidden>
+            <label class="label" for="pa-f-status">Tình trạng</label>
+            <select class="input" id="pa-f-status"></select>
+          </div>
+        </div>
+        <label class="sync-toggle">
+          <input type="checkbox" id="pa-sync" checked>
+          <span>
+            <strong>Đồng bộ hạn xử lý vào Lịch công tác</strong>
+            <small>Tự tạo sự kiện 17:00 vào ngày hạn xử lý và cập nhật khi phản ánh thay đổi</small>
+          </span>
+        </label>
+      </form>
+      <footer class="modal-foot">
+        <button class="btn btn-secondary" type="button" data-close="reflection-modal">Hủy</button>
+        <button class="btn btn-primary" type="submit" form="pa-form" id="pa-submit">Tiếp nhận phản ánh</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: CHI TIẾT PHẢN ÁNH 1022 ================= -->
+  <div class="modal" id="reflection-detail-modal" hidden>
+    <div class="modal-panel xwide detail" role="dialog" aria-modal="true" aria-labelledby="pad-code">
+      <header class="modal-head">
+        <h2 class="modal-title">
+          <span class="title-icon"><i class="fa-solid fa-tower-broadcast"></i></span>
+          <span id="pad-code"></span>
+        </h2>
+        <div class="head-actions">
+          <select class="input status-select" id="pad-status" aria-label="Cập nhật tình trạng"></select>
+          <button class="icon-btn" type="button" data-close="reflection-detail-modal" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+      </header>
+      <div class="detail-layout">
+        <aside class="detail-info">
+          <div class="detail-scroll">
+            <div>
+              <span class="chip" id="pad-area-chip"><i class="fa-solid fa-location-dot"></i> <b id="pad-area"></b></span>
+              <div class="detail-meta" id="pad-meta"></div>
+            </div>
+            <div class="people-card" id="pad-people"></div>
+            <div>
+              <h4 class="eyebrow">Nội dung phản ánh</h4>
+              <p class="pre" id="pad-content"></p>
+            </div>
+            <div id="pad-result-wrap" hidden>
+              <h4 class="eyebrow">Kết quả xử lý</h4>
+              <p class="pre" id="pad-result"></p>
+            </div>
+            <div>
+              <h4 class="eyebrow">Liên kết</h4>
+              <div class="stack-list" id="pad-tasks"></div>
+            </div>
+          </div>
+          <footer class="detail-foot" id="pad-actions"></footer>
+        </aside>
+        <section class="detail-preview">
+          <div class="timeline-wrap">
+            <h4 class="eyebrow">Nhật ký xử lý</h4>
+            <ol class="timeline" id="pad-timeline"></ol>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: GIAO VIỆC BTV ================= -->
+  <div class="modal" id="btv-modal" hidden>
+    <div class="modal-panel wide" role="dialog" aria-modal="true" aria-labelledby="bt-modal-title">
+      <header class="modal-head">
+        <h2 class="modal-title">
+          <span class="title-icon"><i class="fa-solid fa-stamp"></i></span>
+          <span id="bt-modal-title">Giao việc Ban Thường vụ</span>
+        </h2>
+        <button class="icon-btn" type="button" data-close="btv-modal" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+      </header>
+      <form class="modal-body" id="bt-form" autocomplete="off">
+        <div class="form-grid">
+          <div class="field">
+            <label class="label" for="bt-f-resolution">Số nghị quyết / thông báo</label>
+            <input class="input" id="bt-f-resolution" maxlength="60" placeholder="VD: NQ 05-NQ/BTV">
+          </div>
+          <div class="field">
+            <label class="label" for="bt-f-issued">Ngày ban hành</label>
+            <input class="input" type="date" id="bt-f-issued">
+          </div>
+          <div class="field full">
+            <label class="label" for="bt-f-title">Nội dung giao việc <span class="req">*</span></label>
+            <input class="input" id="bt-f-title" required maxlength="160">
+          </div>
+          <div class="field">
+            <label class="label" for="bt-f-dept">Phòng xử lý chính <span class="req">*</span></label>
+            <select class="input" id="bt-f-dept" required></select>
+          </div>
+          <div class="field">
+            <label class="label" for="bt-f-priority">Mức độ ưu tiên</label>
+            <select class="input" id="bt-f-priority"></select>
+          </div>
+          <div class="field full">
+            <span class="label">Phòng phối hợp</span>
+            <div class="check-list" id="bt-collab-list"></div>
+          </div>
+          <div class="field">
+            <label class="label" for="bt-f-deadline">Hạn hoàn thành <span class="req">*</span></label>
+            <input class="input" type="date" id="bt-f-deadline" required>
+          </div>
+          <div class="field">
+            <label class="label" for="bt-f-report">Hạn báo cáo BTV <span class="req">*</span></label>
+            <input class="input" type="date" id="bt-f-report" required>
+          </div>
+          <div class="field full">
+            <label class="label" for="bt-f-desc">Yêu cầu chi tiết / ghi chú</label>
+            <textarea class="input" id="bt-f-desc" rows="3"></textarea>
+          </div>
+        </div>
+        <label class="sync-toggle">
+          <input type="checkbox" id="bt-sync" checked>
+          <span>
+            <strong>Đồng bộ hạn hoàn thành vào Lịch công tác</strong>
+            <small>Tự tạo sự kiện 17:00 vào ngày hạn hoàn thành và cập nhật khi giao việc thay đổi</small>
+          </span>
+        </label>
+      </form>
+      <footer class="modal-foot">
+        <button class="btn btn-secondary" type="button" data-close="btv-modal">Hủy</button>
+        <button class="btn btn-primary" type="submit" form="bt-form" id="bt-submit">Ghi nhận giao việc</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: CHI TIẾT GIAO VIỆC BTV ================= -->
+  <div class="modal" id="btv-detail-modal" hidden>
+    <div class="modal-panel wide detail" role="dialog" aria-modal="true" aria-labelledby="btd-resolution">
+      <header class="modal-head">
+        <h2 class="modal-title">
+          <span class="title-icon"><i class="fa-solid fa-stamp"></i></span>
+          <span id="btd-resolution"></span>
+        </h2>
+        <button class="icon-btn" type="button" data-close="btv-detail-modal" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+      </header>
+      <div class="detail-scroll">
+        <div>
+          <h3 class="detail-title" id="btd-title"></h3>
+          <div class="detail-meta" id="btd-meta"></div>
+          <div class="meta-line" id="btd-source" hidden></div>
+        </div>
+
+        <div class="people-card">
+          <div class="person-line">
+            <span class="mini-ico"><i class="fa-regular fa-calendar"></i></span>
+            <div><small>Ngày ban hành</small><b id="btd-issued"></b></div>
+          </div>
+          <div class="person-line">
+            <span class="mini-ico"><i class="fa-regular fa-clock"></i></span>
+            <div><small>Hạn hoàn thành</small><b id="btd-deadline"></b></div>
+          </div>
+          <div class="person-line">
+            <span class="mini-ico"><i class="fa-solid fa-stamp"></i></span>
+            <div><small>Hạn báo cáo BTV</small><b id="btd-report-due"></b></div>
+          </div>
+          <div class="person-line">
+            <span class="mini-ico"><i class="fa-solid fa-sitemap"></i></span>
+            <div><small>Phòng xử lý chính</small><b id="btd-lead"></b></div>
+          </div>
+          <div class="person-line" id="btd-collab-row">
+            <span class="mini-ico"><i class="fa-solid fa-users"></i></span>
+            <div><small>Phòng phối hợp</small><b id="btd-collab"></b></div>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="eyebrow">Yêu cầu chi tiết / ghi chú</h4>
+          <p class="pre" id="btd-desc"></p>
+        </div>
+      </div>
+      <footer class="modal-foot">
+        <button class="btn btn-secondary" type="button" data-close="btv-detail-modal">Đóng</button>
+        <button class="btn btn-primary" type="button" id="btd-edit"><i class="fa-solid fa-pen-to-square"></i> Chỉnh sửa giao việc</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: CHI TIẾT MỤC TRONG THƯ VIỆN ================= -->
+  <div class="modal" id="library-modal" hidden>
+    <div class="modal-panel wide detail" role="dialog" aria-modal="true" aria-labelledby="lb-title">
+      <header class="modal-head">
+        <h2 class="modal-title">
+          <span class="title-icon"><i class="fa-solid fa-box-archive"></i></span>
+          <span id="lb-section"></span>
+        </h2>
+        <button class="icon-btn" type="button" data-close="library-modal" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+      </header>
+      <div class="detail-scroll">
+        <div>
+          <h3 class="detail-title" id="lb-title"></h3>
+          <div class="detail-meta" id="lb-meta"></div>
+        </div>
+
+        <div class="people-card">
+          <div class="person-line">
+            <span class="mini-ico"><i class="fa-solid fa-sitemap"></i></span>
+            <div><small>Phòng xử lý</small><b id="lb-dept"></b></div>
+          </div>
+          <div class="person-line">
+            <span class="mini-ico"><i class="fa-regular fa-clock"></i></span>
+            <div><small>Hạn</small><b id="lb-deadline"></b></div>
+          </div>
+          <div class="person-line">
+            <span class="mini-ico"><i class="fa-regular fa-calendar"></i></span>
+            <div><small>Ngày lưu vào thư viện</small><b id="lb-saved"></b></div>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="eyebrow">Nội dung</h4>
+          <p class="pre" id="lb-body"></p>
+        </div>
+      </div>
+      <footer class="modal-foot">
+        <button class="btn btn-danger" type="button" id="lb-delete"><i class="fa-regular fa-trash-can"></i> Xóa hẳn</button>
+        <button class="btn btn-secondary" type="button" id="lb-restore"><i class="fa-solid fa-rotate-left"></i> Đưa về màn hình gốc</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: FORM PHÒNG BAN ================= -->
+  <div class="modal" id="dept-modal" hidden>
+    <div class="modal-panel narrow" role="dialog" aria-modal="true" aria-labelledby="dept-modal-title">
+      <header class="modal-head">
+        <h2 class="modal-title">
+          <span class="title-icon"><i class="fa-solid fa-sitemap"></i></span>
+          <span id="dept-modal-title">Thêm phòng ban mới</span>
+        </h2>
+        <button class="icon-btn" type="button" data-close="dept-modal" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+      </header>
+      <form class="modal-body" id="dept-form" autocomplete="off">
+        <div class="field">
+          <label class="label" for="dept-name">Tên phòng ban <span class="req">*</span></label>
+          <input class="input" id="dept-name" required maxlength="80" placeholder="VD: Phòng Tài chính – Kế toán">
+        </div>
+      </form>
+      <footer class="modal-foot">
+        <button class="btn btn-secondary" type="button" data-close="dept-modal">Hủy</button>
+        <button class="btn btn-primary" type="submit" form="dept-form" id="dept-submit">Lưu phòng ban</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: CẬP NHẬT ĐỒNG LOẠT TỪ EXCEL ================= -->
+  <div class="modal" id="import-modal" hidden>
+    <div class="modal-panel xwide" role="dialog" aria-modal="true" aria-labelledby="im-title">
+      <header class="modal-head">
+        <h2 class="modal-title">
+          <span class="title-icon"><i class="fa-solid fa-file-import"></i></span>
+          <span id="im-title">Cập nhật đồng loạt từ Excel</span>
+        </h2>
+        <button class="icon-btn" type="button" data-close="import-modal" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+      </header>
+      <div class="modal-body">
+        <div id="im-pick">
+          <p class="im-hint" id="im-hint"></p>
+          <div class="im-cols">
+            <span class="im-cols-label">Các cột nhận được</span>
+            <span class="chips" id="im-col-list"></span>
+          </div>
+          <div class="dropzone" id="im-dropzone" role="button" tabindex="0" data-autofocus aria-describedby="im-hint">
+            <i class="fa-solid fa-file-excel" aria-hidden="true"></i>
+            <strong>Nhấn để chọn hoặc kéo thả file Excel vào đây</strong>
+            <small>.xlsx, .xls hoặc .csv · tự nhận dòng tiêu đề, không cần đúng thứ tự cột · chưa ghi gì cho tới khi bạn xem trước và bấm Cập nhật</small>
+          </div>
+          <input type="file" id="im-file" accept=".xlsx,.xls,.csv" hidden>
+        </div>
+
+        <div id="im-preview" hidden>
+          <div class="im-file">
+            <span class="file-icon ft-xls"><i class="fa-solid fa-file-excel"></i></span>
+            <div class="file-info">
+              <span class="file-name" id="im-file-name"></span>
+              <span class="file-size" id="im-meta"></span>
+            </div>
+            <label class="im-sheet" id="im-sheet-wrap">
+              <span>Trang tính</span>
+              <select class="input" id="im-sheet"></select>
+            </label>
+            <button class="btn btn-secondary btn-sm" type="button" id="im-change">
+              <i class="fa-solid fa-arrow-rotate-left"></i> Chọn file khác
+            </button>
+          </div>
+          <div class="im-problem" id="im-problem" hidden></div>
+          <div id="im-mapping"></div>
+          <div class="im-summary" id="im-summary" role="group" aria-label="Lọc theo thao tác"></div>
+          <div class="im-note" id="im-depts" hidden></div>
+          <div class="im-table-wrap" id="im-table">
+            <table class="table im-table">
+              <thead>
+                <tr>
+                  <th>Dòng</th>
+                  <th>Thao tác</th>
+                  <th>Nội dung</th>
+                  <th>Phòng xử lý</th>
+                  <th>Hạn</th>
+                  <th>Trạng thái</th>
+                  <th>Ghi chú</th>
+                </tr>
+              </thead>
+              <tbody id="im-rows"></tbody>
+            </table>
+          </div>
+          <div class="empty-inline im-empty" id="im-empty" hidden>Không có dòng nào thuộc nhóm này.</div>
+        </div>
+      </div>
+      <footer class="modal-foot split">
+        <button class="btn btn-ghost" type="button" id="im-template"><i class="fa-solid fa-download"></i> Tải file mẫu</button>
+        <div class="btn-group">
+          <button class="btn btn-secondary" type="button" data-close="import-modal">Hủy</button>
+          <button class="btn btn-primary" type="button" id="im-apply" disabled><i class="fa-solid fa-check"></i> Cập nhật</button>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: CÀI ĐẶT ================= -->
+  <!-- ================= MODAL: TÌM KIẾM TOÀN HỆ THỐNG ================= -->
+  <div class="modal search-modal" id="search-modal" hidden>
+    <div class="modal-panel search-panel" role="dialog" aria-modal="true" aria-label="Tìm kiếm toàn hệ thống">
+      <div class="search-top">
+        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+        <input class="input search-input" id="gs-input" type="search" placeholder="Tìm công việc, đơn thư, phản ánh, cán bộ, lịch…" aria-label="Tìm trong toàn hệ thống" autocomplete="off" data-autofocus>
+        <kbd>Esc</kbd>
+      </div>
+      <div class="search-results" id="gs-results" role="listbox" aria-label="Kết quả tìm kiếm"></div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: PHÍM TẮT ================= -->
+  <div class="modal" id="shortcut-modal" hidden>
+    <div class="modal-panel narrow" role="dialog" aria-modal="true" aria-labelledby="shortcut-title">
+      <header class="modal-head">
+        <h2 class="modal-title" id="shortcut-title">Phím tắt</h2>
+        <button class="icon-btn" type="button" data-close="shortcut-modal" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+      </header>
+      <div class="modal-body">
+        <ul class="shortcut-list">
+          <li><span><kbd>/</kbd> hoặc <kbd>Ctrl</kbd>+<kbd>K</kbd></span><b>Tìm kiếm toàn hệ thống</b></li>
+          <li><span><kbd>N</kbd></span><b>Tạo mới ở màn hình hiện tại</b></li>
+          <li><span><kbd>G</kbd> rồi <kbd>O</kbd></span><b>Dashboard hệ thống</b></li>
+          <li><span><kbd>G</kbd> rồi <kbd>B</kbd></span><b>Giao việc BTV</b></li>
+          <li><span><kbd>G</kbd> rồi <kbd>T</kbd></span><b>Giao việc TTUB</b></li>
+          <li><span><kbd>G</kbd> rồi <kbd>P</kbd></span><b>Đơn thư, PAKN</b></li>
+          <li><span><kbd>G</kbd> rồi <kbd>F</kbd></span><b>Phản ánh 1022</b></li>
+          <li><span><kbd>G</kbd> rồi <kbd>C</kbd></span><b>Lịch công tác</b></li>
+          <li><span><kbd>G</kbd> rồi <kbd>N</kbd></span><b>Nhân sự</b></li>
+          <li><span><kbd>G</kbd> rồi <kbd>D</kbd></span><b>Phòng ban</b></li>
+          <li><span><kbd>G</kbd> rồi <kbd>R</kbd></span><b>Báo cáo định kỳ</b></li>
+          <li><span><kbd>?</kbd></span><b>Mở bảng phím tắt này</b></li>
+          <li><span><kbd>Esc</kbd></span><b>Đóng hộp thoại</b></li>
+        </ul>
+        <p class="ov-note">Phím tắt không hoạt động khi đang gõ trong ô nhập liệu hoặc khi có hộp thoại đang mở.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: XÁC NHẬN ================= -->
+  <div class="modal" id="confirm-modal" hidden>
+    <div class="modal-panel narrow" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-msg">
+      <div class="modal-body confirm-body">
+        <div class="confirm-icon" id="confirm-icon"></div>
+        <h2 class="modal-title" id="confirm-title"></h2>
+        <p id="confirm-msg"></p>
+      </div>
+      <footer class="modal-foot">
+        <button class="btn btn-secondary" type="button" id="confirm-cancel" data-autofocus>Hủy bỏ</button>
+        <button class="btn btn-danger" type="button" id="confirm-ok"></button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: ĐĂNG NHẬP ADMIN ================= -->
+  <div class="modal" id="login-modal" hidden>
+    <div class="modal-panel narrow" role="dialog" aria-modal="true" aria-labelledby="login-title">
+      <header class="modal-head">
+        <h2 class="modal-title" id="login-title">Đăng nhập admin</h2>
+        <button class="icon-btn" type="button" data-close="login-modal" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+      </header>
+      <form class="modal-body" id="login-form" autocomplete="off">
+        <p class="login-hint">Cần đăng nhập admin để sửa hoặc xóa ở màn này.</p>
+        <div class="field">
+          <label class="label" for="login-user">Tài khoản</label>
+          <input class="input" id="login-user" type="text" value="admin" autocomplete="username" data-autofocus>
+        </div>
+        <div class="field">
+          <label class="label" for="login-pass">Mật khẩu</label>
+          <input class="input" id="login-pass" type="password" autocomplete="current-password">
+        </div>
+        <p class="login-err" id="login-err" role="alert" hidden>Sai tài khoản hoặc mật khẩu.</p>
+        <footer class="modal-foot">
+          <button class="btn btn-secondary" type="button" data-close="login-modal">Hủy bỏ</button>
+          <button class="btn btn-primary" type="submit">Đăng nhập</button>
+        </footer>
+      </form>
+    </div>
+  </div>
+</body>
+</html>
