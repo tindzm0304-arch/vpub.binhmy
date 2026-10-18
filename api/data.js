@@ -1,8 +1,19 @@
+import crypto from 'node:crypto';
 import { get, put } from '@vercel/blob';
 
 // Một file JSON duy nhất chứa toàn bộ dữ liệu nghiệp vụ. Store phải tạo ở chế độ Private.
-// Không xác thực: ai mở được trang đều đọc/ghi được dữ liệu (theo yêu cầu: đồng bộ không cần đăng nhập).
 const PATH = 'quan-ly-noi-bo/data.json';
+
+// Mã truy cập chung (biến ACCESS_CODE trên Vercel), mỗi máy nhập một lần. Không phân biệt hoa thường, bỏ dấu cách và gạch nối.
+// ponytail: không giới hạn số lần thử; mã dài 12 ký tự đủ chống đoán. Thêm rate limit nếu thấy nhiều yêu cầu 401 lạ trong log.
+const norm = (s) => String(s ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+function allowed(req) {
+  const want = norm(process.env.ACCESS_CODE);
+  if (!want) throw new Error('Thiếu biến môi trường ACCESS_CODE trên Vercel');
+  const given = norm(req.headers['x-access-code']);
+  return given.length === want.length && crypto.timingSafeEqual(Buffer.from(given), Buffer.from(want));
+}
 
 async function readDoc() {
   // useCache: false để luôn đọc bản mới nhất, tránh ghi đè bản vừa được máy khác lưu
@@ -13,6 +24,7 @@ async function readDoc() {
 
 export default async function handler(req, res) {
   try {
+    if (!allowed(req)) return res.status(401).json({ error: 'Sai mã truy cập' });
     if (req.method === 'GET') return res.json(await readDoc());
 
     if (req.method === 'PUT') {

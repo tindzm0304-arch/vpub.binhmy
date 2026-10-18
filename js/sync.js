@@ -1,4 +1,5 @@
-/* Đồng bộ dữ liệu giữa các máy qua /api/data (Vercel Blob). Tự chạy khi mở trang, không cần đăng nhập.
+/* Đồng bộ dữ liệu giữa các máy qua /api/data (Vercel Blob). Tự chạy khi mở trang, không cần đăng nhập;
+   mỗi máy nhập mã truy cập chung một lần (lưu trong trình duyệt), nhập lại khi mã bị đổi.
    Mỗi thay đổi được gửi lên server sau 1 giây; cứ 60 giây (và khi quay lại tab) tải bản mới từ máy khác.
    Xung đột: bản server thắng; bản của máy này được lưu vào khóa dự phòng trước khi ghi đè.
    ponytail: ghi toàn bộ dữ liệu theo phiên bản (last-write-wins), không gộp từng mục. Hai máy sửa cùng lúc thì bản sửa đến sau thắng.
@@ -7,6 +8,7 @@ import { toast } from './utils.js';
 import { snapshot, applyRemote, seededFresh } from './store.js';
 
 const BACKUP_KEY = 'quan-ly-noi-bo:truoc-dong-bo';
+const CODE_KEY = 'quan-ly-noi-bo:ma-truy-cap';
 const DEBOUNCE_MS = 1000;
 const POLL_MS = 60000;
 
@@ -17,17 +19,43 @@ let pushing = false;
 let again = false;
 let applying = false;
 let offline = false;
+let stopped = false; // không có mã truy cập: dữ liệu chỉ lưu trên máy này đến khi tải lại trang
+let code = '';
 
 async function errText(res) {
   const body = await res.json().catch(() => ({}));
   return body.error || `HTTP ${res.status}`;
 }
 
+const normCode = (s) => String(s ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+/** Hỏi mã truy cập. Trả về false nếu người dùng bỏ qua. */
+function askCode(message) {
+  code = normCode(window.prompt(message));
+  try {
+    if (code) localStorage.setItem(CODE_KEY, code);
+    else localStorage.removeItem(CODE_KEY);
+  } catch {
+    /* Trình duyệt chặn lưu trữ: chỉ nhớ đến khi tải lại trang */
+  }
+  if (!code) {
+    stopped = true;
+    toast('Chưa nhập mã truy cập: dữ liệu chỉ lưu trên máy này. Tải lại trang để nhập mã.', 'warning');
+  }
+  return Boolean(code);
+}
+
 const api = (method, body) => fetch('/api/data', {
   method,
-  headers: body ? { 'Content-Type': 'application/json' } : {},
+  headers: { 'X-Access-Code': code, ...(body && { 'Content-Type': 'application/json' }) },
   body: body && JSON.stringify(body),
 });
+
+/** Mã sai hoặc đã đổi: hỏi lại rồi tải bản server (bản của máy này được lưu dự phòng khi tải). */
+function unauthorized() {
+  baseVersion = null;
+  if (askCode('Mã truy cập không đúng hoặc đã được đổi. Nhập mã truy cập:')) return pull();
+}
 
 /** Báo lỗi một lần cho mỗi đợt mất kết nối, không lặp lại mỗi 60 giây. */
 function reportError(err) {
@@ -59,6 +87,7 @@ function adopt(doc) {
 
 async function pull() {
   const res = await api('GET');
+  if (res.status === 401) return unauthorized();
   if (!res.ok) throw new Error(await errText(res));
   const doc = await res.json();
   offline = false;
@@ -82,6 +111,11 @@ async function pushNow() {
   pushing = true;
   try {
     const res = await api('PUT', { baseVersion, data: snapshot() });
+    if (res.status === 401) {
+      again = false;
+      await unauthorized();
+      return;
+    }
     if (res.status === 409) {
       const doc = await res.json();
       keepLocalBackup();
@@ -107,14 +141,14 @@ async function pushNow() {
 
 /** Tải bản mới nếu không có thay đổi đang chờ gửi. */
 function refresh() {
-  if (document.visibilityState !== 'visible' || timer || pushing) return;
+  if (stopped || document.visibilityState !== 'visible' || timer || pushing) return;
   pull().catch(reportError);
 }
 
 /** Gọi khi khởi động, sau loadStore(). */
 export function initSync() {
   window.addEventListener('store:change', () => {
-    if (applying) return;
+    if (applying || stopped) return;
     clearTimeout(timer);
     timer = setTimeout(() => {
       timer = null;
@@ -125,5 +159,11 @@ export function initSync() {
   });
   document.addEventListener('visibilitychange', refresh);
   setInterval(refresh, POLL_MS);
+  try {
+    code = localStorage.getItem(CODE_KEY) || '';
+  } catch {
+    code = '';
+  }
+  if (!code && !askCode('Nhập mã truy cập để đồng bộ dữ liệu giữa các máy:')) return;
   pull().catch(reportError);
 }
