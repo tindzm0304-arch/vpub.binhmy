@@ -12,3 +12,6 @@ archive/
 
 # Phụ thuộc (nếu về sau dùng npm)
 node_modules/
+
+.vercel
+.env*
