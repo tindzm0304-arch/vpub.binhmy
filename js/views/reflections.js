@@ -14,6 +14,8 @@ import {
 } from './intake.js';
 import { fillLeadSelect, renderCollabList, readCollabList, wireLeadSelect, deptLines } from '../assign.js';
 import { formFiles, commitFiles, dropRemoved, renderSaved, wireSaved, addSaved } from '../attach.js';
+import { createBulk } from '../bulk.js';
+import { dateCell } from '../excel.js';
 import {
   $, esc, fold, uid, dateKey, addDays, formatDate, fillOptions, statusBadge, toast, wirePeriodFilter, wireKpiFilter, inRange,
   TODO, SOON, OVERDUE, DONE,
@@ -24,6 +26,25 @@ const isClosed = (r) => REFLECTION_CLOSED.includes(r.status);
 /* Biểu đồ trạng thái hiển thị: thứ tự và màu. */
 const DONUT_ORDER = [TODO, SOON, OVERDUE, DONE];
 const DONUT_COLORS = { [TODO]: '#94a3b8', [SOON]: '#f59e0b', [OVERDUE]: '#ef4444', [DONE]: '#10b981' };
+
+const bulk = createBulk({
+  prefix: 'pa',
+  kind: 'reflections',
+  noun: 'phản ánh',
+  sheet: 'Phản ánh 1022',
+  byId: reflectionById,
+  statuses: REFLECTION_STATUSES,
+  dept: 'deptId',
+  setStatus: (r, value) => {
+    r.status = value;
+    addTimeline(r, `Tình trạng: ${value}`);
+  },
+  render: () => renderReflections(),
+  exportName: 'phan-anh-da-chon',
+  widths: [6, 16, 44, 18, 24, 14, 16],
+  exportHeader: ['STT', 'Mã', 'Nội dung phản ánh', 'Khu vực', 'Phòng xử lý chính', 'Hạn', 'Tình trạng'],
+  exportRow: (r, stt) => [stt, r.code, r.content, r.area, deptName(r.deptId), dateCell(r.deadline), effectiveStatus(r)],
+});
 
 let period = null;
 let formId = null;
@@ -55,6 +76,7 @@ export function initReflections() {
   $('#pa-rows').addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && e.target.matches('tr[data-id]')) openReflectionDetail(e.target.dataset.id);
   });
+  bulk.wire();
 
   $('#pa-form').addEventListener('submit', submitReflection);
   suggest = wireSuggestion({
@@ -123,6 +145,7 @@ export function renderReflections() {
     .sort((a, b) => (isClosed(a) - isClosed(b)) || a.deadline.localeCompare(b.deadline));
 
   $('#pa-rows').innerHTML = rows.map((r, i) => reflectionRow(r, today, i + 1)).join('');
+  bulk.update(rows.map((r) => r.id));
   $('#pa-empty').hidden = rows.length > 0;
 }
 
@@ -160,7 +183,8 @@ function openSummary() {
 function reflectionRow(r, today, stt) {
   const s = dueState(r, isClosed(r), today);
   return `
-    <tr data-id="${esc(r.id)}" tabindex="0" class="${s === 'overdue' ? 'is-overdue' : ''}">
+    <tr data-id="${esc(r.id)}" tabindex="0" class="${s === 'overdue' ? 'is-overdue' : ''} ${bulk.rowClass(r.id)}">
+      ${bulk.cell(r.id)}
       <td class="col-stt">${stt}</td>
       <td>
         <div class="task-title"><span class="code">${esc(r.code)}</span></div>
@@ -168,7 +192,6 @@ function reflectionRow(r, today, stt) {
         ${r.petitionId ? '<div class="meta-line"><i class="fa-solid fa-link"></i> Đã thành đơn thư</div>' : ''}
       </td>
       <td><div class="task-desc clamp">${esc(r.content)}</div></td>
-      <td><span class="chip"><i class="fa-solid fa-location-dot"></i> ${esc(r.area)}</span></td>
       <td>${esc(r.field)}${deptLines(r.deptId, r.collabDeptIds)}</td>
       <td><span class="date-chip ${s === 'overdue' ? 'is-overdue' : ''}">${formatDate(r.deadline)}</span></td>
       <td>
@@ -189,7 +212,7 @@ function reflectionRow(r, today, stt) {
 
 function onRowClick(e) {
   const row = e.target.closest('tr[data-id]');
-  if (!row) return;
+  if (!row || e.target.closest('[data-select]')) return;
   const action = e.target.closest('[data-action]')?.dataset.action;
   if (action === 'status') return;
   if (action === 'library') libraryWithUndo('reflections', [row.dataset.id], 'phản ánh');

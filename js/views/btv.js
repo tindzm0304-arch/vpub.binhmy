@@ -7,9 +7,11 @@ import { drawDonut } from '../donut.js';
 import { rememberRecent } from '../recent.js';
 import { fillLeadSelect, renderCollabList, readCollabList, wireLeadSelect, deptLines } from '../assign.js';
 import { formFiles, commitFiles, dropRemoved, renderSaved, wireSaved, addSaved } from '../attach.js';
+import { createBulk } from '../bulk.js';
+import { dateCell } from '../excel.js';
 import {
   $, $$, esc, fold, uid, dateKey, addDays, formatDate, statusBadge, priorityBadge, fillOptions, toast,
-  wirePeriodFilter, inRange, PRIORITIES, STATUSES, CLOSED, statusChoices,
+  wirePeriodFilter, inRange, PRIORITIES, STATUSES, MANUAL_STATUSES, CLOSED, statusChoices,
 } from '../utils.js';
 
 const BTV_STATUS_COLORS = {
@@ -17,6 +19,25 @@ const BTV_STATUS_COLORS = {
 };
 const REPORT_LABEL ={ done: 'Đã báo cáo', late: 'Quá hạn báo cáo', soon: 'Sắp đến hạn báo cáo', wait: 'Chờ báo cáo' };
 const REPORT_BADGE = { done: 'badge-done', late: 'badge-overdue', soon: 'badge-deadline', wait: 'badge-doing' };
+
+const bulk = createBulk({
+  prefix: 'bt',
+  kind: 'tasks',
+  noun: 'giao việc BTV',
+  sheet: 'Giao việc BTV',
+  byId: taskById,
+  statuses: MANUAL_STATUSES,
+  dept: 'departmentId',
+  syncEvent: true,
+  setStatus: (t, value) => { t.status = value; },
+  render: () => renderBtv(),
+  exportName: 'giao-viec-btv-da-chon',
+  widths: [6, 22, 40, 24, 14, 14, 16],
+  exportHeader: ['STT', 'Số nghị quyết', 'Nội dung giao việc', 'Phòng xử lý chính', 'Ban hành', 'Hạn hoàn thành', 'Trạng thái'],
+  exportRow: (t, stt) => [
+    stt, t.btv?.resolutionNo ?? '', t.title, deptName(t.departmentId), dateCell(t.btv?.issuedAt), dateCell(t.deadline), effectiveStatus(t),
+  ],
+});
 
 let period = null;
 let formId = null;
@@ -57,6 +78,7 @@ export function initBtv() {
   $('#bt-rows').addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && e.target.matches('tr[data-id]')) openBtvDetail(e.target.dataset.id);
   });
+  bulk.wire();
   $('#btd-edit').addEventListener('click', () => {
     closeModal('btv-detail-modal');
     openBtvForm(detailId);
@@ -118,6 +140,7 @@ export function renderBtv() {
       || (a.btv?.reportDue ?? '').localeCompare(b.btv?.reportDue ?? ''));
 
   $('#bt-rows').innerHTML = rows.map((t, i) => btvRow(t, today, i + 1)).join('');
+  bulk.update(rows.map((t) => t.id));
   $('#bt-empty').hidden = rows.length > 0;
   for (const btn of $$('[data-bt-state]')) btn.setAttribute('aria-pressed', String(btn.dataset.btState === state));
 }
@@ -128,7 +151,8 @@ function btvRow(t, today, stt) {
   const status = effectiveStatus(t, today);
   const fromPetition = t.sourceId && petitionById(t.sourceId);
   return `
-    <tr data-id="${esc(t.id)}" tabindex="0" class="${state === 'late' ? 'is-overdue' : ''}">
+    <tr data-id="${esc(t.id)}" tabindex="0" class="${state === 'late' ? 'is-overdue' : ''} ${bulk.rowClass(t.id)}">
+      ${bulk.cell(t.id)}
       <td class="col-stt">${stt}</td>
       <td>
         <div class="task-title"><span class="code">${esc(b.resolutionNo || 'Chưa có số')}</span></div>
@@ -159,7 +183,7 @@ function btvRow(t, today, stt) {
 
 function onRowClick(e) {
   const row = e.target.closest('tr[data-id]');
-  if (!row) return;
+  if (!row || e.target.closest('[data-select]')) return;
   const action = e.target.closest('[data-action]')?.dataset.action;
   if (action === 'status') return;
   if (action === 'library') libraryWithUndo('tasks', [row.dataset.id], 'giao việc BTV');

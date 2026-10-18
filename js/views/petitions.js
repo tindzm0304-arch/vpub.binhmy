@@ -12,6 +12,8 @@ import { fillLeadSelect, renderCollabList, readCollabList, wireLeadSelect, deptL
 import { openBtvForm } from './btv.js';
 import { formFiles, commitFiles, dropRemoved, renderSaved, wireSaved, addSaved } from '../attach.js';
 import { rememberRecent } from '../recent.js';
+import { createBulk } from '../bulk.js';
+import { dateCell } from '../excel.js';
 import { usualCollabs } from '../insight.js';
 import { drawDonut } from '../donut.js';
 import {
@@ -27,6 +29,27 @@ const PETITION_DONUT = [
   { label: OVERDUE, color: '#ef4444' },
   { label: DONE, color: '#10b981' },
 ];
+
+const bulk = createBulk({
+  prefix: 'pt',
+  kind: 'petitions',
+  noun: 'đơn thư',
+  sheet: 'Đơn thư',
+  byId: petitionById,
+  statuses: PETITION_STATUSES,
+  dept: 'deptId',
+  setStatus: (p, value) => {
+    p.status = value;
+    addTimeline(p, `Tình trạng: ${value}`);
+  },
+  render: () => renderPetitions(),
+  exportName: 'don-thu-da-chon',
+  widths: [6, 16, 26, 16, 22, 24, 14, 16],
+  exportHeader: ['STT', 'Mã đơn', 'Công dân', 'Loại', 'Lĩnh vực', 'Phòng xử lý chính', 'Hạn xử lý', 'Tình trạng'],
+  exportRow: (p, stt) => [
+    stt, p.code, p.citizen?.name ?? '', p.type, p.field, deptName(p.deptId), dateCell(p.deadline), effectiveStatus(p),
+  ],
+});
 
 let period = null;
 let formId = null;
@@ -53,6 +76,7 @@ export function initPetitions() {
   $('#pt-rows').addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && e.target.matches('tr[data-id]')) openPetitionDetail(e.target.dataset.id);
   });
+  bulk.wire();
 
   $('#pt-form').addEventListener('submit', submitPetition);
   formAttach = formFiles($('#pt-dropzone'), $('#pt-file-input'), $('#pt-file-list'), $('#pt-file-count'));
@@ -140,6 +164,7 @@ export function renderPetitions() {
     .sort((a, b) => (isClosed(a) - isClosed(b)) || a.deadline.localeCompare(b.deadline));
 
   $('#pt-rows').innerHTML = rows.map((p, i) => petitionRow(p, today, i + 1)).join('');
+  bulk.update(rows.map((p) => p.id));
   $('#pt-empty').hidden = rows.length > 0;
 }
 
@@ -147,7 +172,8 @@ function petitionRow(p, today, stt) {
   const s = dueState(p, isClosed(p), today);
   const linked = tasksOf(p).length;
   return `
-    <tr data-id="${esc(p.id)}" tabindex="0" class="${s === 'overdue' ? 'is-overdue' : ''}">
+    <tr data-id="${esc(p.id)}" tabindex="0" class="${s === 'overdue' ? 'is-overdue' : ''} ${bulk.rowClass(p.id)}">
+      ${bulk.cell(p.id)}
       <td class="col-stt">${stt}</td>
       <td>
         <div class="task-title"><span class="code">${esc(p.code)}</span></div>
@@ -182,7 +208,7 @@ function petitionRow(p, today, stt) {
 
 function onRowClick(e) {
   const row = e.target.closest('tr[data-id]');
-  if (!row) return;
+  if (!row || e.target.closest('[data-select]')) return;
   const action = e.target.closest('[data-action]')?.dataset.action;
   if (action === 'status') return;
   if (action === 'library') libraryWithUndo('petitions', [row.dataset.id], 'đơn thư');
