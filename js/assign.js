@@ -1,6 +1,6 @@
 /* Phân công theo phòng ban: một phòng xử lý chính và nhiều phòng phối hợp. Không giao cho cá nhân. */
 import { deptName, deptNames, sortedDepartments, store } from './store.js';
-import { esc, fillOptions } from './utils.js';
+import { esc, fillOptions, fold } from './utils.js';
 
 const NO_LEAD = '<option value="">Chưa chọn phòng</option>';
 
@@ -10,11 +10,11 @@ export function fillLeadSelect(select, value = '', leading = NO_LEAD) {
   select.value = value ?? '';
 }
 
-/** Điền ô người giao: chỉ liệt kê cán bộ thuộc phòng xử lý chính hoặc phòng phối hợp đã chọn; giữ lựa chọn cũ nếu người đó vẫn thuộc các phòng này. */
-export function fillAssignerSelect(select, deptIds, value = '') {
-  const allowed = new Set(deptIds.filter(Boolean));
+/** Điền ô người giao: chỉ liệt kê cán bộ thuộc phòng Lãnh đạo; giữ lựa chọn cũ nếu người đó vẫn thuộc phòng này. */
+export function fillAssignerSelect(select, value = '') {
+  const leaderId = store.departments.find((d) => fold(d.name) === fold('Lãnh đạo'))?.id;
   const people = store.personnel
-    .filter((p) => allowed.has(p.deptId))
+    .filter((p) => leaderId && p.deptId === leaderId)
     .sort((a, b) => a.name.localeCompare(b.name, 'vi'));
   const leading = people.length ? '<option value="">Chọn người giao…</option>' : '<option value="">Phòng này chưa có cán bộ</option>';
   fillOptions(select, people.map((p) => [p.id, p.title ? `${p.name} (${p.title})` : p.name]), leading);
