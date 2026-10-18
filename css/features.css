@@ -42,8 +42,8 @@
   background: var(--surface); color: var(--text); font: inherit; font-size: 14px; font-weight: 700;
   cursor: pointer; white-space: nowrap; transition: background .2s, border-color .2s;
 }
-.auth-chip:hover { background: var(--surface-3); }
-.auth-chip i { font-size: 16px; color: var(--danger); }
+.auth-chip:hover { background: var(--primary-soft); border-color: var(--primary); }
+.auth-chip i { font-size: 16px; color: var(--primary); }
 .auth-chip.is-admin { border-color: var(--success); }
 .auth-chip.is-admin i { color: var(--success); }
 .topbar-actions .icon-btn { width: 46px; height: 46px; }
@@ -205,3 +205,7 @@ kbd {
 
 /* Thư viện: không xuống dòng ở cột loại */
 .lib-type { white-space: nowrap; }
+
+/* Nút sao chép liên kết trên ảnh bìa hồ sơ cán bộ, nằm cạnh nút đóng */
+.icon-btn.banner-link { right: 60px; }
+

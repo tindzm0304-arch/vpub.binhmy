@@ -33,6 +33,9 @@ const OPENERS = {
   events: (id) => (eventById(id) ? { view: 'calendar', open: () => openEventDetail(id) } : null),
 };
 
+/** Cách mở hồ sơ `kind`/`id` (dùng cho đường dẫn riêng); null nếu không có hồ sơ này. */
+export const openerFor = (kind, id) => OPENERS[kind]?.(id) ?? null;
+
 /** Mỗi kết quả: loại, mã, tiêu đề, dòng phụ và chuỗi để tìm kiếm. */
 function index() {
   const rows = [];

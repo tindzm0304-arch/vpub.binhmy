@@ -27,6 +27,8 @@ import { initNotify } from './notify.js';
 import { initSearch, openSearch } from './search.js';
 import { initShortcuts } from './shortcuts.js';
 import { autoBackupIfDue } from './backup.js';
+import { initLinks, parseRecordHash, openRecordFromHash } from './links.js';
+import { initPwa } from './pwa.js';
 
 const AUTO_BACKUP_CHECK_MS = 30 * 60 * 1000;
 
@@ -60,6 +62,13 @@ let lastDay = dateKey();
 function routeName() {
   const name = location.hash.slice(1);
   return VIEWS[name] ? name : 'overview';
+}
+
+/** Địa chỉ là đường dẫn riêng của một hồ sơ thì mở hồ sơ đó, không thì chuyển màn. */
+function route() {
+  const rec = parseRecordHash();
+  if (rec) openRecordFromHash(rec, showView);
+  else showView(routeName());
 }
 
 function showView(name) {
@@ -166,24 +175,27 @@ function init() {
   initNotify();
   initSearch();
   initShortcuts({ openSearch });
+  initLinks();
+  initPwa();
   autoBackupIfDue();
   setInterval(autoBackupIfDue, AUTO_BACKUP_CHECK_MS);
 
   $('#menu-toggle').addEventListener('click', toggleNav);
   $('#scrim').addEventListener('click', () => $('#app').classList.remove('nav-open'));
-  window.addEventListener('hashchange', () => showView(routeName()));
+  window.addEventListener('hashchange', route);
   window.addEventListener('store:change', renderActive);
 
   tick();
   setInterval(tick, 1000);
+  if (parseRecordHash()) showView('overview'); // nền phía sau trong lúc chờ mở hồ sơ
   // Lần đầu mở trên máy này: vào Dashboard hệ thống, bỏ qua màn đang nhớ trong địa chỉ
   try {
     if (!localStorage.getItem(FIRST_OPEN_KEY)) {
       localStorage.setItem(FIRST_OPEN_KEY, '1');
-      history.replaceState(null, '', '#overview');
+      if (!parseRecordHash()) history.replaceState(null, '', '#overview');
     }
   } catch { /* trình duyệt chặn localStorage: giữ hành vi cũ */ }
-  showView(routeName());
+  route();
 }
 
 init();

@@ -12,6 +12,8 @@ export function recentList() {
 
 /** Ghi nhớ một hồ sơ vừa mở, đưa lên đầu danh sách. */
 export function rememberRecent({ kind, id, title }) {
+  // links.js đổi địa chỉ trang thành đường dẫn riêng của hồ sơ này
+  window.dispatchEvent(new CustomEvent('record:open', { detail: { kind, id } }));
   const list = recentList().filter((r) => !(r.kind === kind && r.id === id));
   list.unshift({ kind, id, title, at: Date.now() });
   try {
