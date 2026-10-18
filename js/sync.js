@@ -1,19 +1,21 @@
 /* Đồng bộ dữ liệu giữa các máy qua /api/data (Vercel Blob). Tự chạy khi mở trang, không cần đăng nhập;
    mỗi máy nhập mã truy cập chung một lần (lưu trong trình duyệt), nhập lại khi mã bị đổi.
-   Mỗi thay đổi được gửi lên server sau 1 giây; cứ 60 giây (và khi quay lại tab) tải bản mới từ máy khác.
-   Xung đột: bản server thắng; bản của máy này được lưu vào khóa dự phòng trước khi ghi đè.
-   ponytail: ghi toàn bộ dữ liệu theo phiên bản (last-write-wins), không gộp từng mục. Hai máy sửa cùng lúc thì bản sửa đến sau thắng.
-   Nâng cấp: gộp theo updatedAt từng mục và thêm tombstone cho mục đã xóa. */
+   Mỗi thay đổi được gửi lên server sau 1 giây; cứ 30 giây (và khi quay lại tab) tải bản mới từ máy khác.
+   Máy khác đã lưu trước (409) hoặc máy này có thay đổi chưa gửi: gộp ba chiều theo từng mục (js/merge.js), không ghi đè cả bộ.
+   Bản gốc của lần đồng bộ gần nhất được lưu trong trình duyệt nên thay đổi chưa gửi vẫn được gộp sau khi tải lại trang. */
 import { toast } from './utils.js';
 import { snapshot, applyRemote, seededFresh } from './store.js';
+import { merge3 } from './merge.js';
 
 const BACKUP_KEY = 'quan-ly-noi-bo:truoc-dong-bo';
 const CODE_KEY = 'quan-ly-noi-bo:ma-truy-cap';
+const SYNCED_KEY = 'quan-ly-noi-bo:dong-bo-goc';
 const DEBOUNCE_MS = 1000;
-const POLL_MS = 60000;
+// ponytail: hỏi server định kỳ; mỗi lần là một thao tác đọc Blob. Cần nhanh hơn thì chuyển sang realtime (WebSocket/SSE).
+const POLL_MS = 30000;
 
-// null: chưa tải được dữ liệu từ server. Khi đó không ghi lên, tránh đè dữ liệu thật bằng bản cũ của máy này.
-let baseVersion = null;
+// Bản server ở lần đồng bộ gần nhất { version, data }. null: máy này chưa đồng bộ lần nào.
+let synced = null;
 let timer = null;
 let pushing = false;
 let again = false;
@@ -40,7 +42,7 @@ function askCode(message) {
   }
   if (!code) {
     stopped = true;
-    toast('Chưa nhập mã truy cập: dữ liệu chỉ lưu trên máy này. Tải lại trang để nhập mã.', 'warning');
+    toast('Chưa nhập mã truy cập: dữ liệu chỉ lưu trên máy này. Tải lại trang để nhập mã; thay đổi sẽ được gộp lên server.', 'warning');
   }
   return Boolean(code);
 }
@@ -51,20 +53,28 @@ const api = (method, body) => fetch('/api/data', {
   body: body && JSON.stringify(body),
 });
 
-/** Mã sai hoặc đã đổi: hỏi lại rồi tải bản server (bản của máy này được lưu dự phòng khi tải). */
+/** Mã sai hoặc đã đổi: hỏi lại rồi tải bản server (thay đổi của máy này được gộp, không mất). */
 function unauthorized() {
-  baseVersion = null;
   if (askCode('Mã truy cập không đúng hoặc đã được đổi. Nhập mã truy cập:')) return pull();
 }
 
-/** Báo lỗi một lần cho mỗi đợt mất kết nối, không lặp lại mỗi 60 giây. */
+/** Báo lỗi một lần cho mỗi đợt mất kết nối, không lặp lại mỗi lần hỏi server. */
 function reportError(err) {
   console.warn(err);
   if (!offline) toast(`Đồng bộ lỗi: ${err.message}`, 'error');
   offline = true;
 }
 
-/** Giữ bản đang có trên máy này trước khi bị bản server ghi đè (một khóa, ghi đè bản cũ). */
+function setSynced(version, data) {
+  synced = { version, data };
+  try {
+    localStorage.setItem(SYNCED_KEY, JSON.stringify(synced));
+  } catch {
+    /* Hết chỗ lưu trữ: vẫn đồng bộ được, chỉ mất khả năng gộp sau khi tải lại trang */
+  }
+}
+
+/** Giữ bản đang có trên máy này trước khi gộp (một khóa, ghi đè bản cũ). */
 function keepLocalBackup() {
   try {
     localStorage.setItem(BACKUP_KEY, JSON.stringify({ at: new Date().toISOString(), data: snapshot() }));
@@ -73,16 +83,38 @@ function keepLocalBackup() {
   }
 }
 
-/** Nhận bản từ server và nạp vào giao diện. Cờ `applying` chặn sự kiện store:change do chính việc nạp gây ra. */
-function adopt(doc) {
-  baseVersion = doc.version;
+/** Máy này có thay đổi chưa gửi lên server không. */
+const isDirty = () => !synced?.data || JSON.stringify(snapshot()) !== JSON.stringify(synced.data);
+
+/** Nạp dữ liệu vào giao diện. Cờ `applying` chặn sự kiện store:change do chính việc nạp gây ra. */
+function apply(data) {
   applying = true;
   try {
-    applyRemote(doc.data);
+    applyRemote(data);
     window.dispatchEvent(new CustomEvent('store:change'));
   } finally {
     applying = false;
   }
+}
+
+/** Nhận bản server mới. Trả về true nếu máy này cần gửi lại (có thay đổi đã gộp hoặc server còn trống). */
+function receive(doc) {
+  if (!doc.data) {
+    // Server chưa có dữ liệu: máy này là nguồn đầu tiên. Máy mới chỉ có dữ liệu mẫu thì chờ đến khi có thay đổi thật.
+    setSynced(doc.version, null);
+    return !seededFresh;
+  }
+  if (!isDirty() || (!synced && seededFresh)) {
+    apply(doc.data);
+    // Lưu bản đã nạp (đã chuẩn hóa khi nạp) làm gốc, để lần so sánh sau không báo thay đổi giả
+    setSynced(doc.version, snapshot());
+    return false;
+  }
+  keepLocalBackup();
+  const merged = merge3(synced?.data, snapshot(), doc.data);
+  setSynced(doc.version, doc.data);
+  apply(merged);
+  return true;
 }
 
 async function pull() {
@@ -91,51 +123,47 @@ async function pull() {
   if (!res.ok) throw new Error(await errText(res));
   const doc = await res.json();
   offline = false;
-  if (baseVersion !== null && doc.version === baseVersion) return;
-  if (doc.data) {
-    keepLocalBackup();
-    adopt(doc);
+  if (synced && doc.version === synced.version) {
+    if (isDirty()) pushNow();
     return;
   }
-  // Server chưa có dữ liệu: máy này là nguồn đầu tiên. Máy mới chỉ có dữ liệu mẫu thì chờ đến khi có thay đổi thật.
-  baseVersion = doc.version;
-  if (!seededFresh) pushNow();
+  if (receive(doc)) pushNow();
 }
 
 async function pushNow() {
-  if (baseVersion === null) return;
+  if (!synced || stopped) return;
   if (pushing) {
     again = true;
     return;
   }
   pushing = true;
   try {
-    const res = await api('PUT', { baseVersion, data: snapshot() });
-    if (res.status === 401) {
-      again = false;
-      await unauthorized();
-      return;
-    }
-    if (res.status === 409) {
-      const doc = await res.json();
-      keepLocalBackup();
-      adopt(doc);
-      again = false;
-      toast('Máy khác vừa cập nhật dữ liệu. Đã tải bản mới; bản sửa vừa rồi của máy này được lưu dự phòng.', 'warning');
-    } else if (res.ok) {
-      baseVersion = (await res.json()).version;
+    // Mỗi lần 409 là một lần gộp với bản mới hơn rồi gửi lại; giới hạn để không lặp vô hạn khi nhiều máy cùng ghi
+    for (let tries = 0; tries < 3; tries++) {
+      const data = snapshot();
+      const res = await api('PUT', { baseVersion: synced.version, data });
+      if (res.status === 401) {
+        again = false;
+        await unauthorized();
+        return;
+      }
+      if (res.status === 409) {
+        if (!receive(await res.json())) return;
+        continue;
+      }
+      if (!res.ok) throw new Error(await errText(res));
+      setSynced((await res.json()).version, data);
       offline = false;
-    } else {
-      throw new Error(await errText(res));
+      return;
     }
   } catch (err) {
     reportError(err);
   } finally {
     pushing = false;
-  }
-  if (again) {
-    again = false;
-    pushNow();
+    if (again) {
+      again = false;
+      pushNow();
+    }
   }
 }
 
@@ -147,23 +175,24 @@ function refresh() {
 
 /** Gọi khi khởi động, sau loadStore(). */
 export function initSync() {
+  try {
+    synced = JSON.parse(localStorage.getItem(SYNCED_KEY) || 'null');
+    code = localStorage.getItem(CODE_KEY) || '';
+  } catch {
+    synced = null;
+  }
   window.addEventListener('store:change', () => {
     if (applying || stopped) return;
     clearTimeout(timer);
     timer = setTimeout(() => {
       timer = null;
-      // Chưa tải được bản server (mất mạng lúc mở trang): thử tải lại trước, thay đổi của máy này nằm trong bản dự phòng
-      if (baseVersion === null) refresh();
+      // Chưa tải được bản server lần nào: tải trước, thay đổi của máy này sẽ được gộp
+      if (!synced) refresh();
       else pushNow();
     }, DEBOUNCE_MS);
   });
   document.addEventListener('visibilitychange', refresh);
   setInterval(refresh, POLL_MS);
-  try {
-    code = localStorage.getItem(CODE_KEY) || '';
-  } catch {
-    code = '';
-  }
   if (!code && !askCode('Nhập mã truy cập để đồng bộ dữ liệu giữa các máy:')) return;
   pull().catch(reportError);
 }
