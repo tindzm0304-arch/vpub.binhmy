@@ -1,7 +1,7 @@
 import { get, put } from '@vercel/blob';
-import { isAuthorized } from '../lib/auth.js';
 
 // Một file JSON duy nhất chứa toàn bộ dữ liệu nghiệp vụ. Store phải tạo ở chế độ Private.
+// Không xác thực: ai mở được trang đều đọc/ghi được dữ liệu (theo yêu cầu: đồng bộ không cần đăng nhập).
 const PATH = 'quan-ly-noi-bo/data.json';
 
 async function readDoc() {
@@ -12,12 +12,12 @@ async function readDoc() {
 }
 
 export default async function handler(req, res) {
-  if (!isAuthorized(req)) return res.status(401).json({ error: 'Cần đăng nhập admin để đồng bộ' });
   try {
     if (req.method === 'GET') return res.json(await readDoc());
 
     if (req.method === 'PUT') {
       const { baseVersion, data } = req.body || {};
+      if (!data || typeof data !== 'object') return res.status(400).json({ error: 'Thiếu dữ liệu' });
       const current = await readDoc();
       // Máy này đang sửa từ bản cũ: trả bản server để máy kia tải về, không ghi đè
       if (current.version !== (baseVersion ?? 0)) return res.status(409).json(current);

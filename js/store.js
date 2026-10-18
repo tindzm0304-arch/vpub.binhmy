@@ -21,6 +21,8 @@ export const DUE_LABEL = { overdue: 'Quá hạn', soon: 'Sắp đến hạn', ok
 
 export const TRASH_DAYS = 30;
 const ACTIVITY_KEEP = 500;
+/** true khi lần mở trang này nạp dữ liệu mẫu (máy mới, chưa có dữ liệu). sync.js dùng để không đẩy dữ liệu mẫu lên server. */
+export let seededFresh = false;
 export const store = {
   departments: [], personnel: [], tasks: [], events: [], petitions: [], reflections: [], trash: [], library: [], activity: [],
   recurring: [], rules: [], checklists: [],
@@ -212,6 +214,7 @@ export function loadStore() {
     keepUnreadable();
   }
   seed();
+  seededFresh = true;
   doneTaskIds = doneTaskSet();
   openIds = openIdSet();
   primeTracking();

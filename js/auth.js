@@ -3,7 +3,6 @@
 import { $, toast } from './utils.js';
 import { openModal, closeModal, confirmDialog } from './modal.js';
 import { ADMIN_CONFIG } from './admin-config.js';
-import { connectSync, disconnectSync } from './sync.js';
 
 // Mật khẩu không nằm trong mã nguồn: chỉ có salt + hash PBKDF2 (đổi bằng: node scripts/admin-password.mjs)
 const AUTH_KEY = 'quan-ly-noi-bo:admin';
@@ -46,7 +45,6 @@ export function isAdmin() {
 
 function setAdmin(on) {
   adminInMemory = on;
-  if (!on) disconnectSync();
   try {
     if (on) sessionStorage.setItem(AUTH_KEY, '1');
     else sessionStorage.removeItem(AUTH_KEY);
@@ -117,8 +115,6 @@ export function initAuth() {
     setAdmin(true);
     closeModal('login-modal');
     toast('Đã đăng nhập admin. Bấm lại thao tác để tiếp tục.', 'success');
-    connectSync($('#login-user').value.trim(), $('#login-pass').value)
-      .catch((err) => toast(`Chưa đồng bộ được: ${err.message}`, 'error'));
   });
 
   $('#auth-toggle').addEventListener('click', async () => {
