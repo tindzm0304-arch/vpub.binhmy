@@ -12,7 +12,9 @@ import { rememberRecent } from '../recent.js';
 import {
   wireSuggestion, dueBadge, renderTimeline, fillFieldSelect, actionBtn,
 } from './intake.js';
-import { fillLeadSelect, renderCollabList, readCollabList, wireLeadSelect, deptLines } from '../assign.js';import {
+import { fillLeadSelect, renderCollabList, readCollabList, wireLeadSelect, deptLines } from '../assign.js';
+import { formFiles, commitFiles, dropRemoved, renderSaved, wireSaved, addSaved } from '../attach.js';
+import {
   $, esc, fold, uid, dateKey, addDays, formatDate, fillOptions, statusBadge, toast, wirePeriodFilter, wireKpiFilter, inRange,
   TODO, SOON, OVERDUE, DONE,
 } from '../utils.js';
@@ -27,6 +29,7 @@ let period = null;
 let formId = null;
 let detailId = null;
 let suggest = null;
+let formAttach = null;
 
 /* ---------------- Khởi tạo ---------------- */
 
@@ -51,6 +54,21 @@ export function initReflections() {
     content: $('#pa-f-content'), field: $('#pa-f-field'), dept: $('#pa-f-dept'), chip: $('#pa-suggest'),
   });
   wireLeadSelect($('#pa-f-dept'), $('#pa-f-collab-list'));
+  formAttach = formFiles($('#pa-dropzone'), $('#pa-file-input'), $('#pa-file-list'), $('#pa-file-count'));
+  wireSaved($('#pad-files'), () => reflectionById(detailId), () => {
+    persist();
+    renderDetailFiles();
+  });
+  $('#pad-add-file').addEventListener('click', () => $('#pad-file-input').click());
+  $('#pad-file-input').addEventListener('change', async () => {
+    const r = reflectionById(detailId);
+    if (!r) return;
+    const added = await addSaved(r, $('#pad-file-input'));
+    if (!added) return;
+    persist();
+    renderDetailFiles();
+    toast(`Đã thêm ${added} tệp`, 'success');
+  });
 
   $('#pad-status').addEventListener('change', (e) => setStatus(reflectionById(detailId), e.target.value));
   $('#pad-actions').addEventListener('click', onDetailAction);
@@ -168,6 +186,8 @@ export function openReflectionForm(id = null) {
   $('#pa-f-status').value = r?.status ?? TODO;
   $('#pa-f-status-wrap').hidden = !r;
   $('#pa-sync').checked = r ? r.calendarSync !== false : true;
+  formAttach.files = [...(r?.files ?? [])];
+  formAttach.render();
 
   $('#pa-modal-title').textContent = r ? `Cập nhật ${r.code}` : 'Tiếp nhận phản ánh 1022';
   $('#pa-submit').innerHTML = r
@@ -177,12 +197,20 @@ export function openReflectionForm(id = null) {
   openModal('reflection-modal');
 }
 
-function submitReflection(e) {
+async function submitReflection(e) {
   e.preventDefault();
   const area = $('#pa-f-area').value.trim();
   const content = $('#pa-f-content').value.trim();
   if (!area || !content) {
     toast('Vui lòng nhập khu vực và nội dung phản ánh', 'error');
+    return;
+  }
+  let files;
+  try {
+    files = await commitFiles(formAttach.files);
+  } catch (err) {
+    console.error(err);
+    toast('Không lưu được tệp đính kèm trên trình duyệt này', 'error');
     return;
   }
   const receivedAt = $('#pa-f-received').value;
@@ -200,9 +228,11 @@ function submitReflection(e) {
     deadline: existing?.receivedAt === receivedAt ? existing.deadline : addDays(receivedAt, DEFAULT_SLA['Phản ánh']),
     result: $('#pa-f-result').value.trim(),
     calendarSync: $('#pa-sync').checked,
+    files,
   };
 
   if (existing) {
+    dropRemoved(existing.files, files);
     const before = existing.status;
     const beforeResult = existing.result ?? '';
     Object.assign(existing, fields, { status: $('#pa-f-status').value });

@@ -25,7 +25,7 @@ export function countsOf(data) {
 /** Mã các tệp đính kèm thật (bỏ tệp mẫu không có nội dung), kể cả tệp của mục trong thùng rác. */
 function attachmentIds(data) {
   const items = [
-    ...(data.tasks ?? []), ...(data.petitions ?? []),
+    ...(data.tasks ?? []), ...(data.petitions ?? []), ...(data.reflections ?? []),
     ...(data.trash ?? []).map((entry) => entry.item).filter(Boolean),
     ...(data.library ?? []).map((entry) => entry.item).filter(Boolean),
   ];

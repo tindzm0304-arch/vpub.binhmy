@@ -49,9 +49,8 @@ export function initTasks() {
   wireKpiFilter($('#view-tasks'), $('#task-status-filter'), $('#task-rows').closest('.card'));
   fillOptions($('#task-priority'), PRIORITIES);
   wireLeadSelect($('#task-dept'), $('#task-collab-list'));
-  $('#task-dept').addEventListener('change', () => {
-    fillAssignerSelect($('#task-assigner'), $('#task-dept').value, $('#task-assigner').value);
-  });
+  $('#task-dept').addEventListener('change', () => refreshAssigner());
+  $('#task-collab-list').addEventListener('change', () => refreshAssigner());
 
   $('#task-new').addEventListener('click', () => openTaskForm());
   $('#task-rows').addEventListener('click', onRowClick);
@@ -586,7 +585,7 @@ export function openTaskForm(id = null) {
     '<option value="" disabled>Chọn phòng xử lý chính…</option>',
   );
   renderCollabList($('#task-collab-list'), $('#task-dept').value, task?.collabDeptIds ?? []);
-  fillAssignerSelect($('#task-assigner'), $('#task-dept').value, task?.assignerId ?? '');
+  refreshAssigner(task?.assignerId ?? '');
 
   $('#task-name').value = task?.title ?? '';
   $('#task-deadline').value = task?.deadline ?? addDays(dateKey(), 7);
@@ -603,6 +602,12 @@ export function openTaskForm(id = null) {
     : '<i class="fa-solid fa-paper-plane"></i> Giao việc';
   renderFormFiles();
   openModal('task-modal');
+}
+
+/** Ô người giao chỉ lấy cán bộ của phòng xử lý chính và các phòng phối hợp đang chọn. */
+function refreshAssigner(keep = $('#task-assigner').value) {
+  const lead = $('#task-dept').value;
+  fillAssignerSelect($('#task-assigner'), [lead, ...readCollabList($('#task-collab-list'), lead)], keep);
 }
 
 function bindDropzone() {

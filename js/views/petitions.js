@@ -10,6 +10,7 @@ import {
 } from './intake.js';
 import { fillLeadSelect, renderCollabList, readCollabList, wireLeadSelect, deptLines } from '../assign.js';import { openTaskDetail } from './tasks.js';
 import { openBtvForm } from './btv.js';
+import { formFiles, commitFiles, dropRemoved, renderSaved, wireSaved, addSaved } from '../attach.js';
 import { rememberRecent } from '../recent.js';
 import { usualCollabs } from '../insight.js';
 import { drawDonut } from '../donut.js';
@@ -33,6 +34,7 @@ let formReflectionId = null;
 let dueTouched = false;
 let detailId = null;
 let suggest = null;
+let formAttach = null;
 
 /* ---------------- Khởi tạo ---------------- */
 
@@ -53,6 +55,21 @@ export function initPetitions() {
   });
 
   $('#pt-form').addEventListener('submit', submitPetition);
+  formAttach = formFiles($('#pt-dropzone'), $('#pt-file-input'), $('#pt-file-list'), $('#pt-file-count'));
+  wireSaved($('#ptd-files'), () => petitionById(detailId), () => {
+    persist();
+    renderDetailFiles();
+  });
+  $('#ptd-add-file').addEventListener('click', () => $('#ptd-file-input').click());
+  $('#ptd-file-input').addEventListener('change', async () => {
+    const p = petitionById(detailId);
+    if (!p) return;
+    const added = await addSaved(p, $('#ptd-file-input'));
+    if (!added) return;
+    persist();
+    renderDetailFiles();
+    toast(`Đã thêm ${added} tệp`, 'success');
+  });
   suggest = wireSuggestion({
     content: $('#pt-f-content'), field: $('#pt-f-field'), dept: $('#pt-f-dept'), chip: $('#pt-suggest'),
   });
@@ -208,6 +225,8 @@ export function openPetitionForm(id = null, prefill = null) {
   $('#pt-f-status').value = v.status;
   $('#pt-f-status-wrap').hidden = !p;
   $('#pt-sync').checked = p ? p.calendarSync !== false : true;
+  formAttach.files = [...(p?.files ?? [])];
+  formAttach.render();
 
   dueTouched = Boolean(p);
   $('#pt-f-deadline').value = p?.deadline ?? dueDateFor(v.type, v.receivedAt);
@@ -252,12 +271,20 @@ function updateDupes() {
       </button>`).join('')}` : '';
 }
 
-function submitPetition(e) {
+async function submitPetition(e) {
   e.preventDefault();
   const name = $('#pt-f-name').value.trim();
   const content = $('#pt-f-content').value.trim();
   if (!name || !content) {
     toast('Vui lòng nhập họ tên công dân và nội dung đơn', 'error');
+    return;
+  }
+  let files;
+  try {
+    files = await commitFiles(formAttach.files);
+  } catch (err) {
+    console.error(err);
+    toast('Không lưu được tệp đính kèm trên trình duyệt này', 'error');
     return;
   }
   const deptId = $('#pt-f-dept').value || null;
@@ -273,10 +300,12 @@ function submitPetition(e) {
     deadline: $('#pt-f-deadline').value,
     result: $('#pt-f-result').value.trim(),
     calendarSync: $('#pt-sync').checked,
+    files,
   };
 
   const existing = petitionById(formId);
   if (existing) {
+    dropRemoved(existing.files, files);
     const before = existing.status;
     const beforeResult = existing.result ?? '';
     Object.assign(existing, fields, { status: $('#pt-f-status').value });
@@ -287,7 +316,7 @@ function submitPetition(e) {
   } else {
     const petition = {
       id: uid(), code: nextCode('DT', store.petitions), ...fields,
-      status: TODO, reflectionId: formReflectionId, timeline: [], files: [],
+      status: TODO, reflectionId: formReflectionId, timeline: [],
     };
     store.petitions.push(petition);
     addTimeline(petition, `Tiếp nhận đơn qua ${fields.channel.toLowerCase()}`);
@@ -305,6 +334,10 @@ function submitPetition(e) {
 }
 
 /* ---------------- Chi tiết ---------------- */
+
+function renderDetailFiles() {
+  renderSaved($('#ptd-files'), $('#ptd-file-count'), petitionById(detailId)?.files);
+}
 
 export function openPetitionDetail(id) {
   const p = petitionById(id);
@@ -340,6 +373,7 @@ export function openPetitionDetail(id) {
   $('#ptd-content').textContent = p.content;
   $('#ptd-result').textContent = p.result ?? '';
   $('#ptd-result-wrap').hidden = !p.result;
+  renderDetailFiles();
   renderLinkedTasks(p);
   renderTimeline($('#ptd-timeline'), p);
   renderDetailActions(p);

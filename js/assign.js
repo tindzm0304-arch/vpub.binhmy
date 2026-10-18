@@ -10,10 +10,11 @@ export function fillLeadSelect(select, value = '', leading = NO_LEAD) {
   select.value = value ?? '';
 }
 
-/** Điền ô người giao: chỉ liệt kê cán bộ thuộc phòng đã chọn; giữ lựa chọn cũ nếu người đó vẫn thuộc phòng. */
-export function fillAssignerSelect(select, deptId, value = '') {
+/** Điền ô người giao: chỉ liệt kê cán bộ thuộc phòng xử lý chính hoặc phòng phối hợp đã chọn; giữ lựa chọn cũ nếu người đó vẫn thuộc các phòng này. */
+export function fillAssignerSelect(select, deptIds, value = '') {
+  const allowed = new Set(deptIds.filter(Boolean));
   const people = store.personnel
-    .filter((p) => deptId && p.deptId === deptId)
+    .filter((p) => allowed.has(p.deptId))
     .sort((a, b) => a.name.localeCompare(b.name, 'vi'));
   const leading = people.length ? '<option value="">Chọn người giao…</option>' : '<option value="">Phòng này chưa có cán bộ</option>';
   fillOptions(select, people.map((p) => [p.id, p.title ? `${p.name} (${p.title})` : p.name]), leading);

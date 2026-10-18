@@ -6,6 +6,7 @@ import { openModal, closeModal, confirmDialog } from '../modal.js';
 import { drawDonut } from '../donut.js';
 import { rememberRecent } from '../recent.js';
 import { fillLeadSelect, renderCollabList, readCollabList, wireLeadSelect, deptLines } from '../assign.js';
+import { formFiles, commitFiles, dropRemoved, renderSaved, wireSaved, addSaved } from '../attach.js';
 import {
   $, $$, esc, fold, uid, dateKey, addDays, formatDate, statusBadge, priorityBadge, fillOptions, toast,
   wirePeriodFilter, inRange, PRIORITIES, STATUSES, CLOSED, statusChoices,
@@ -21,6 +22,7 @@ let period = null;
 let formId = null;
 let formSourceId = null;
 let detailId = null;
+let formAttach = null;
 
 /** Trạng thái báo cáo BTV: đã báo cáo, quá hạn, sắp đến hạn (trong 3 ngày) hoặc chờ. */
 export function reportState(task, today = dateKey()) {
@@ -60,6 +62,25 @@ export function initBtv() {
     openBtvForm(detailId);
   });
   $('#bt-form').addEventListener('submit', submitBtv);
+  formAttach = formFiles($('#bt-dropzone'), $('#bt-file-input'), $('#bt-file-list'), $('#bt-file-count'));
+  wireSaved($('#btd-files'), () => taskById(detailId), () => {
+    persist();
+    renderDetailFiles();
+  });
+  $('#btd-add-file').addEventListener('click', () => $('#btd-file-input').click());
+  $('#btd-file-input').addEventListener('change', async () => {
+    const task = taskById(detailId);
+    if (!task) return;
+    const added = await addSaved(task, $('#btd-file-input'));
+    if (!added) return;
+    persist();
+    renderDetailFiles();
+    toast(`Đã thêm ${added} tệp`, 'success');
+  });
+}
+
+function renderDetailFiles() {
+  renderSaved($('#btd-files'), $('#btd-file-count'), taskById(detailId)?.files);
 }
 
 /* ---------------- Danh sách ---------------- */
@@ -186,6 +207,7 @@ export function openBtvDetail(id) {
   $('#btd-collab-row').hidden = !collab;
   $('#btd-collab').textContent = collab;
   $('#btd-desc').textContent = task.desc || 'Không có yêu cầu chi tiết.';
+  renderDetailFiles();
   openModal('btv-detail-modal');
 }
 
@@ -226,6 +248,8 @@ export function openBtvForm(id = null, prefill = null) {
   $('#bt-f-priority').value = task?.priority ?? 'Cao';
   $('#bt-f-desc').value = task?.desc ?? prefill?.desc ?? '';
   $('#bt-sync').checked = task ? Boolean(task.eventId) : true;
+  formAttach.files = [...(task?.files ?? [])];
+  formAttach.render();
 
   $('#bt-modal-title').textContent = task
     ? 'Cập nhật giao việc BTV'
@@ -236,7 +260,7 @@ export function openBtvForm(id = null, prefill = null) {
   openModal('btv-modal');
 }
 
-function submitBtv(e) {
+async function submitBtv(e) {
   e.preventDefault();
   const departmentId = $('#bt-f-dept').value || null;
   const data = {
@@ -258,14 +282,24 @@ function submitBtv(e) {
     return;
   }
 
+  let files;
+  try {
+    files = await commitFiles(formAttach.files);
+  } catch (err) {
+    console.error(err);
+    toast('Không lưu được tệp đính kèm trên trình duyệt này', 'error');
+    return;
+  }
+
   let task = taskById(formId);
   if (task) {
-    Object.assign(task, data);
+    dropRemoved(task.files, files);
+    Object.assign(task, data, { files });
     task.btv = { ...(task.btv ?? {}), ...btv };
     toast('Đã cập nhật giao việc BTV', 'success');
   } else {
     task = {
-      id: uid(), ...data, status: 'Chưa thực hiện', eventId: null, files: [], createdAt: Date.now(),
+      id: uid(), ...data, status: 'Chưa thực hiện', eventId: null, files, createdAt: Date.now(),
       source: 'btv', sourceId: formSourceId, btv: { ...btv, reported: false, reportedAt: null },
     };
     store.tasks.push(task);

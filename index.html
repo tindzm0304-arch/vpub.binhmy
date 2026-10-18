@@ -1587,6 +1587,20 @@
             <select class="input" id="pt-f-status"></select>
           </div>
         </div>
+        <div class="section-gap">
+          <div class="row-between">
+            <span class="label"><i class="fa-solid fa-paperclip"></i> Tài liệu đính kèm</span>
+            <span class="chip" id="pt-file-count">0 tệp</span>
+          </div>
+          <div class="dropzone" id="pt-dropzone" role="button" tabindex="0">
+            <i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i>
+            <strong>Nhấn để chọn hoặc kéo thả tệp vào đây</strong>
+            <small>PDF, Word, Excel, PowerPoint, hình ảnh</small>
+          </div>
+          <input type="file" id="pt-file-input" multiple hidden>
+          <div class="file-list" id="pt-file-list"></div>
+        </div>
+
         <label class="sync-toggle">
           <input type="checkbox" id="pt-sync" checked>
           <span>
@@ -1631,6 +1645,14 @@
             <div id="ptd-result-wrap" hidden>
               <h4 class="eyebrow">Kết quả / tiến độ xử lý</h4>
               <p class="pre" id="ptd-result"></p>
+            </div>
+            <div>
+              <div class="row-between">
+                <h4 class="eyebrow">Tài liệu (<span id="ptd-file-count">0</span>)</h4>
+                <button class="btn btn-ghost btn-sm" type="button" id="ptd-add-file"><i class="fa-solid fa-plus"></i> Thêm tệp</button>
+              </div>
+              <input type="file" id="ptd-file-input" multiple hidden>
+              <div class="file-list" id="ptd-files"></div>
             </div>
             <div>
               <h4 class="eyebrow">Công việc liên kết</h4>
@@ -1704,6 +1726,20 @@
             <select class="input" id="pa-f-status"></select>
           </div>
         </div>
+        <div class="section-gap">
+          <div class="row-between">
+            <span class="label"><i class="fa-solid fa-paperclip"></i> Tài liệu đính kèm</span>
+            <span class="chip" id="pa-file-count">0 tệp</span>
+          </div>
+          <div class="dropzone" id="pa-dropzone" role="button" tabindex="0">
+            <i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i>
+            <strong>Nhấn để chọn hoặc kéo thả tệp vào đây</strong>
+            <small>PDF, Word, Excel, PowerPoint, hình ảnh</small>
+          </div>
+          <input type="file" id="pa-file-input" multiple hidden>
+          <div class="file-list" id="pa-file-list"></div>
+        </div>
+
         <label class="sync-toggle">
           <input type="checkbox" id="pa-sync" checked>
           <span>
@@ -1747,6 +1783,14 @@
             <div id="pad-result-wrap" hidden>
               <h4 class="eyebrow">Kết quả xử lý</h4>
               <p class="pre" id="pad-result"></p>
+            </div>
+            <div>
+              <div class="row-between">
+                <h4 class="eyebrow">Tài liệu (<span id="pad-file-count">0</span>)</h4>
+                <button class="btn btn-ghost btn-sm" type="button" id="pad-add-file"><i class="fa-solid fa-plus"></i> Thêm tệp</button>
+              </div>
+              <input type="file" id="pad-file-input" multiple hidden>
+              <div class="file-list" id="pad-files"></div>
             </div>
             <div>
               <h4 class="eyebrow">Liên kết</h4>
@@ -1814,6 +1858,20 @@
             <textarea class="input" id="bt-f-desc" rows="3"></textarea>
           </div>
         </div>
+        <div class="section-gap">
+          <div class="row-between">
+            <span class="label"><i class="fa-solid fa-paperclip"></i> Tài liệu đính kèm</span>
+            <span class="chip" id="bt-file-count">0 tệp</span>
+          </div>
+          <div class="dropzone" id="bt-dropzone" role="button" tabindex="0">
+            <i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i>
+            <strong>Nhấn để chọn hoặc kéo thả tệp vào đây</strong>
+            <small>PDF, Word, Excel, PowerPoint, hình ảnh</small>
+          </div>
+          <input type="file" id="bt-file-input" multiple hidden>
+          <div class="file-list" id="bt-file-list"></div>
+        </div>
+
         <label class="sync-toggle">
           <input type="checkbox" id="bt-sync" checked>
           <span>
@@ -1872,6 +1930,15 @@
         <div>
           <h4 class="eyebrow">Yêu cầu chi tiết / ghi chú</h4>
           <p class="pre" id="btd-desc"></p>
+        </div>
+
+        <div>
+          <div class="row-between">
+            <h4 class="eyebrow">Tài liệu (<span id="btd-file-count">0</span>)</h4>
+            <button class="btn btn-ghost btn-sm" type="button" id="btd-add-file"><i class="fa-solid fa-plus"></i> Thêm tệp</button>
+          </div>
+          <input type="file" id="btd-file-input" multiple hidden>
+          <div class="file-list" id="btd-files"></div>
         </div>
       </div>
       <footer class="modal-foot">
