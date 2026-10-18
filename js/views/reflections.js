@@ -30,6 +30,7 @@ let formId = null;
 let detailId = null;
 let suggest = null;
 let formAttach = null;
+let summaryShown = false;
 
 /* ---------------- Khởi tạo ---------------- */
 
@@ -43,6 +44,12 @@ export function initReflections() {
   });
   wireKpiFilter($('#view-reflections'), $('#pa-state'), $('#pa-rows').closest('.card'));
   $('#pa-new').addEventListener('click', () => openReflectionForm());
+  // Lần đầu bấm mục Phản ánh (trong phiên mở ứng dụng này) thì hiện tổng hợp
+  $('[data-nav="reflections"]').addEventListener('click', () => {
+    if (summaryShown) return;
+    summaryShown = true;
+    openSummary();
+  });
   $('#pa-rows').addEventListener('click', onRowClick);
   $('#pa-rows').addEventListener('change', onStatusChange);
   $('#pa-rows').addEventListener('keydown', (e) => {
@@ -94,12 +101,7 @@ export function renderReflections() {
   areaSel.value = [...areaSel.options].some((o) => o.value === previous) ? previous : 'all';
 
   const today = dateKey();
-  const counts = { total: store.reflections.length, done: 0, soon: 0, overdue: 0 };
-  for (const r of store.reflections) {
-    if (isClosed(r)) counts.done++;
-    if (dueState(r, isClosed(r), today) === 'soon') counts.soon++;
-    if (dueState(r, isClosed(r), today) === 'overdue') counts.overdue++;
-  }
+  const counts = countReflections(today);
   $('#pa-total').textContent = counts.total;
   $('#pa-done').textContent = counts.done;
   $('#pa-doing').textContent = counts.soon;
@@ -122,6 +124,41 @@ export function renderReflections() {
 
   $('#pa-rows').innerHTML = rows.map((r, i) => reflectionRow(r, today, i + 1)).join('');
   $('#pa-empty').hidden = rows.length > 0;
+}
+
+function countReflections(today) {
+  const counts = { total: store.reflections.length, done: 0, soon: 0, overdue: 0 };
+  for (const r of store.reflections) {
+    if (isClosed(r)) counts.done++;
+    if (dueState(r, isClosed(r), today) === 'soon') counts.soon++;
+    if (dueState(r, isClosed(r), today) === 'overdue') counts.overdue++;
+  }
+  return counts;
+}
+
+/** Hộp tổng hợp: số liệu toàn bộ phản ánh và số lượng theo khu vực. */
+function openSummary() {
+  const counts = countReflections(dateKey());
+  const byArea = {};
+  for (const r of store.reflections) {
+    const area = r.area || 'Chưa rõ khu vực';
+    byArea[area] = (byArea[area] ?? 0) + 1;
+  }
+  const areaRows = Object.entries(byArea).sort((a, b) => b[1] - a[1]);
+  $('#pa-summary-body').innerHTML = counts.total ? `
+    <div class="kpi-grid-2">
+      <div class="card kpi tone-slate"><span class="kpi-label">Tổng phản ánh</span><div class="kpi-value">${counts.total}</div></div>
+      <div class="card kpi tone-green"><span class="kpi-label">Hoàn thành</span><div class="kpi-value">${counts.done}</div></div>
+      <div class="card kpi tone-amber"><span class="kpi-label">Sắp đến hạn</span><div class="kpi-value">${counts.soon}</div></div>
+      <div class="card kpi tone-red"><span class="kpi-label">Quá hạn</span><div class="kpi-value">${counts.overdue}</div></div>
+    </div>
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th scope="col">Khu vực</th><th scope="col" class="t-right">Số phản ánh</th></tr></thead>
+        <tbody>${areaRows.map(([area, n]) => `<tr><td>${esc(area)}</td><td class="t-right">${n}</td></tr>`).join('')}</tbody>
+      </table>
+    </div>` : '<div class="empty-inline">Chưa có phản ánh nào.</div>';
+  openModal('pa-summary-modal');
 }
 
 function reflectionRow(r, today, stt) {
@@ -255,6 +292,10 @@ async function submitReflection(e) {
 
 /* ---------------- Chi tiết ---------------- */
 
+function renderDetailFiles() {
+  renderSaved($('#pad-files'), $('#pad-file-count'), reflectionById(detailId)?.files);
+}
+
 export function openReflectionDetail(id) {
   const r = reflectionById(id);
   if (r) rememberRecent({ kind: 'reflections', id: r.id, title: `${r.code} · ${r.area}` });
@@ -288,6 +329,7 @@ export function openReflectionDetail(id) {
   $('#pad-content').textContent = r.content;
   $('#pad-result').textContent = r.result ?? '';
   $('#pad-result-wrap').hidden = !r.result;
+  renderDetailFiles();
   renderLinked(r);
   renderTimeline($('#pad-timeline'), r);
   renderActions(r);
